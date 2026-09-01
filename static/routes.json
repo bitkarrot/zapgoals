@@ -1,0 +1,16 @@
+[
+  {
+    "path": "/zapgoals/",
+    "name": "PageZapGoals",
+    "template": "/zapgoals/static/js/index.vue",
+    "component": "/zapgoals/static/js/index.js",
+    "i18n": "/zapgoals/static/js/i18n"
+  },
+  {
+    "path": "/zapgoals/:id",
+    "name": "PageZapGoalsPublic",
+    "template": "/zapgoals/static/js/public.vue",
+    "component": "/zapgoals/static/js/public.js",
+    "i18n": "/zapgoals/static/js/i18n"
+  }
+]

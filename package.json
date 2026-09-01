@@ -1,0 +1,11 @@
+{
+  "name": "zapgoals",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LNbits extension for Lightning funding goals",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "3.2.5",
+    "pyright": "1.1.358"
+  }
+}

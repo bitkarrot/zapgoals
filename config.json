@@ -1,0 +1,24 @@
+{
+  "id": "zapgoals",
+  "version": "0.1.0",
+  "name": "ZapGoals",
+  "repo": "https://github.com/bitkarrot/zapgoals",
+  "short_description": "Create shareable Lightning funding goals",
+  "description": "",
+  "tile": "/zapgoals/static/image/zapgoals.svg",
+  "min_lnbits_version": "1.5.0",
+  "contributors": [
+    {
+      "name": "bitkarrot",
+      "uri": "https://github.com/bitkarrot",
+      "role": "Developer"
+    }
+  ],
+  "images": [],
+  "description_md": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/description.md",
+  "license": "MIT",
+  "paid_features": "",
+  "tags": ["Crowdfunding", "Nostr"],
+  "donate": "",
+  "hidden": false
+}
