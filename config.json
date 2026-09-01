@@ -3,19 +3,39 @@
   "version": "0.1.1",
   "name": "ZapGoals",
   "repo": "https://github.com/bitkarrot/zapgoals",
-  "short_description": "Create shareable Lightning funding goals",
-  "description": "",
+  "short_description": "Create customizable Lightning and Nostr funding goals",
+  "description": "Build branded public fundraising pages with live progress, suggested zap amounts, Bitcoin Connect, BOLT11 invoices, LNURL-pay, optional Lightning Addresses, and NIP-57 zap receipts.",
   "tile": "/zapgoals/static/image/zapgoals.svg",
   "min_lnbits_version": "1.5.0",
   "contributors": [
     {
       "name": "bitkarrot",
       "uri": "https://github.com/bitkarrot",
-      "role": "Developer"
+      "role": "Creator"
     }
   ],
-  "images": [],
+  "images": [
+    {
+      "uri": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/static/image/screenshots/public-goal.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/static/image/screenshots/choose-zap.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/static/image/screenshots/bitcoin-connect.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/static/image/screenshots/edit-goal.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/static/image/screenshots/design-preview.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/static/image/screenshots/bolt11-invoice.png"
+    }
+  ],
   "description_md": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/description.md",
+  "details_link": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/config.json",
   "license": "MIT",
   "paid_features": "",
   "tags": ["Crowdfunding", "Nostr"],
