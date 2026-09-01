@@ -4,7 +4,7 @@ ZapGoals is a standalone extension for LNbits 1.5 or newer. It creates public Li
 
 ## Install
 
-In LNbits, open **Manage Extensions**, install ZapGoals from `https://github.com/bitkarrot/zapgoals`, and enable it for your user. A source installation may instead place this repository in the LNbits extensions directory and restart LNbits.
+In LNbits server settings, add `https://raw.githubusercontent.com/bitkarrot/zapgoals/main/extensions.json` to **Extension Manifests**. Restart LNbits, open **Manage Extensions**, install ZapGoals, and enable it for your user. A source installation may instead place this repository in the LNbits extensions directory and restart LNbits.
 
 ZapGoals requires Python 3.10–3.12 and LNbits 1.5.0 or newer. LNURL-pay works without additional configuration. To let ZapGoals own `/.well-known/lnurlp` and issue Lightning Addresses, set `ZAPGOALS_ENABLE_LIGHTNING_ADDRESS=true`; leave it disabled when another extension such as LNURLp already owns that route.
 
