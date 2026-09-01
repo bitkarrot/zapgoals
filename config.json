@@ -1,6 +1,6 @@
 {
   "id": "zapgoals",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "name": "ZapGoals",
   "repo": "https://github.com/bitkarrot/zapgoals",
   "short_description": "Create customizable Lightning and Nostr funding goals",
