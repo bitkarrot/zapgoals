@@ -47,6 +47,9 @@ window.PageZapGoalsPublic = {
         color: this.contrastColor(backgroundColor)
       }
     },
+    amountOptionColor() {
+      return this.$q.dark.isActive ? 'grey-5' : 'grey-8'
+    },
     actualPercent() {
       if (this.goal?.percent !== undefined && this.goal?.percent !== null) {
         return Number(this.goal.percent) || 0
@@ -69,8 +72,17 @@ window.PageZapGoalsPublic = {
     suggestedAmounts() {
       return (this.goal?.suggested_amounts || [21, 100, 500, 1000]).slice(0, 4)
     },
-    lnurlUrl() {
-      return this.goal?.lnurl_url || this.goal?.lnurl || ''
+    selectedAmountLabel() {
+      return Number.isInteger(Number(this.amount)) && Number(this.amount) > 0
+        ? this.formatSats(this.amount)
+        : '—'
+    },
+    paymentButtonLabel() {
+      return Number.isInteger(Number(this.amount)) && Number(this.amount) > 0
+        ? this.$t('zapgoals.zap_amount_button', {
+            amount: this.formatSats(this.amount)
+          })
+        : this.$t('zapgoals.continue_to_payment')
     },
     targetLabel() {
       if (!this.goal?.target_date) return '—'
@@ -219,7 +231,7 @@ window.PageZapGoalsPublic = {
           try {
             bitcoinConnect.launchPaymentModal({
               invoice: data.payment_request,
-              paymentMethods: 'internal',
+              paymentMethods: 'all',
               onPaid: () => this.paymentComplete(),
               onCancelled: () => this.bitcoinConnectCancelled()
             })

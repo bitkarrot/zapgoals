@@ -182,7 +182,68 @@
       <q-card>
         <q-card-section>
           <div class="text-h6" v-text="$t('zapgoals.about_title')"></div>
-          <p class="q-mb-none" v-text="$t('zapgoals.about_body')"></p>
+          <p v-text="$t('zapgoals.about_body')"></p>
+          <q-list bordered separator class="rounded-borders q-mb-md">
+            <q-expansion-item
+              dense
+              icon="alternate_email"
+              :label="$t('zapgoals.about_lightning_title')"
+            >
+              <div
+                class="q-pa-md text-body2"
+                v-text="$t('zapgoals.about_lightning_body')"
+              ></div>
+            </q-expansion-item>
+            <q-expansion-item
+              dense
+              icon="electric_bolt"
+              :label="$t('zapgoals.about_nostr_title')"
+            >
+              <div
+                class="q-pa-md text-body2"
+                v-text="$t('zapgoals.about_nostr_body')"
+              ></div>
+            </q-expansion-item>
+          </q-list>
+          <div class="row items-center q-mb-md">
+            <span v-text="$t('zapgoals.created_by')"></span>
+            <q-btn
+              flat
+              dense
+              no-caps
+              color="primary"
+              type="a"
+              href="https://github.com/bitkarrot"
+              target="_blank"
+              rel="noopener noreferrer"
+              label="bitkarrot"
+            ></q-btn>
+          </div>
+          <div class="q-gutter-y-sm">
+            <q-btn
+              outline
+              no-caps
+              class="full-width"
+              color="primary"
+              icon="help_outline"
+              type="a"
+              href="https://github.com/bitkarrot/zapgoals#lightning-address-and-nostr-setup"
+              target="_blank"
+              rel="noopener noreferrer"
+              :label="$t('zapgoals.setup_guide')"
+            ></q-btn>
+            <q-btn
+              flat
+              no-caps
+              class="full-width"
+              icon="code"
+              type="a"
+              href="https://github.com/bitkarrot/zapgoals"
+              target="_blank"
+              rel="noopener noreferrer"
+              :label="$t('zapgoals.github_repository')"
+            ></q-btn>
+          </div>
         </q-card-section>
       </q-card>
     </div>
@@ -320,6 +381,33 @@
               <q-icon name="qr_code" class="q-mr-sm"></q-icon>
               <span v-text="$t('zapgoals.vanilla_always')"></span>
             </q-banner>
+            <q-input
+              filled
+              v-model.trim="formDialog.data.nostr_pubkey"
+              :label="$t('zapgoals.nostr_pubkey')"
+              maxlength="64"
+              :hint="$t('zapgoals.nostr_hint')"
+              :rules="[nostrRule]"
+            ></q-input>
+            <q-input
+              filled
+              v-model.trim="formDialog.data.lightning_address_username"
+              :label="$t('zapgoals.lightning_username')"
+              maxlength="64"
+              :hint="$t('zapgoals.username_hint')"
+              :rules="[usernameRule]"
+            ></q-input>
+            <q-input
+              filled
+              type="textarea"
+              autogrow
+              v-model="formDialog.data.description_below"
+              :label="$t('zapgoals.description_below')"
+              maxlength="2000"
+              counter
+              :rules="[descriptionRule]"
+            ></q-input>
+
             <div class="row q-col-gutter-md">
               <div class="col-6 col-sm-3">
                 <q-input
@@ -358,33 +446,6 @@
                 ></q-input>
               </div>
             </div>
-            <q-input
-              filled
-              v-model.trim="formDialog.data.nostr_pubkey"
-              :label="$t('zapgoals.nostr_pubkey')"
-              maxlength="64"
-              :hint="$t('zapgoals.nostr_hint')"
-              :rules="[nostrRule]"
-            ></q-input>
-            <q-input
-              filled
-              v-model.trim="formDialog.data.lightning_address_username"
-              :label="$t('zapgoals.lightning_username')"
-              maxlength="64"
-              :hint="$t('zapgoals.username_hint')"
-              :rules="[usernameRule]"
-            ></q-input>
-            <q-input
-              filled
-              type="textarea"
-              autogrow
-              v-model="formDialog.data.description_below"
-              :label="$t('zapgoals.description_below')"
-              maxlength="2000"
-              counter
-              :rules="[descriptionRule]"
-            ></q-input>
-
             <div
               class="text-subtitle2"
               v-text="$t('zapgoals.live_preview')"

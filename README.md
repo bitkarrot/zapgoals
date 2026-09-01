@@ -19,6 +19,28 @@ The `vanilla` payment mode presents standard Lightning invoices, while `all` als
 
 Bitcoin Connect is loaded in the browser through a dynamically pinned import. It is intentionally not an npm build dependency.
 
+## Lightning Address and Nostr setup
+
+### Lightning Address
+
+Every goal has a direct LNURL-pay endpoint at `/zapgoals/api/v1/lnurl/{goal_id}`. To additionally give a goal a human-readable Lightning Address such as `june@example.com`:
+
+1. Set `ZAPGOALS_ENABLE_LIGHTNING_ADDRESS=true` in the LNbits server environment and restart LNbits.
+2. Enter a unique lowercase **Lightning Address username** in the goal form.
+3. Ensure no other extension owns `/.well-known/lnurlp`. LNbits permits only one extension to handle Lightning Addresses, so ZapGoals cannot enable this redirect alongside an active LNURLp extension.
+
+When a wallet resolves the address, ZapGoals returns an LNURL-pay callback that creates an invoice tagged to that goal. A settled invoice increments the goal rather than using the receiving wallet's total balance.
+
+### Nostr zaps
+
+Enter the recipient's 64-character lowercase hexadecimal Nostr public key in the goal form. The field currently expects hex, not `npub`. ZapGoals then advertises `allowsNostr: true` from the goal's LNURL-pay endpoint.
+
+A Nostr client sends a signed kind `9734` zap request to the callback. ZapGoals verifies its signature, recipient `p` tag, amount, and relay list before issuing a description-hash invoice. After settlement, ZapGoals increments the goal and publishes a signed kind `9735` receipt to the requested relays.
+
+The recipient key entered on the goal and the ZapGoals receipt-signing key are different: the goal key identifies who is being zapped, while an extension-generated private key signs receipts. The signing private key stays in the extension database; only its public key is advertised.
+
+Ordinary Bitcoin Connect, QR, and copied BOLT11 payments still increment the goal, but they produce NIP-57 receipts only when initiated through a valid Nostr zap request.
+
 ## Public API
 
 Routes are mounted below the extension's `/zapgoals` prefix:
@@ -48,6 +70,10 @@ make format
 make check
 make test
 ```
+
+## Project
+
+Created by [bitkarrot](https://github.com/bitkarrot). Source code and releases are available in the [ZapGoals GitHub repository](https://github.com/bitkarrot/zapgoals).
 
 ## License
 

@@ -57,6 +57,15 @@ window.i18n.global.mergeLocaleMessage('en', {
     about_title: 'About ZapGoals',
     about_body:
       'Build a shareable goal, track incoming sats live and let supporters pay with any Lightning wallet.',
+    about_lightning_title: 'Lightning Address setup',
+    about_lightning_body:
+      'Set a unique username on the goal. The server must enable the ZapGoals Lightning Address redirect, and no other extension can own the LNURL address route.',
+    about_nostr_title: 'Nostr zap setup',
+    about_nostr_body:
+      'Enter the recipient’s 64-character hex public key. ZapGoals validates NIP-57 requests and publishes receipts after payment.',
+    created_by: 'Created by',
+    setup_guide: 'Setup guide',
+    github_repository: 'GitHub repository',
     loading_goal: 'Loading goal…',
     goal_reached: 'Goal reached — thank you!',
     ended: 'Goal ended',
@@ -69,7 +78,9 @@ window.i18n.global.mergeLocaleMessage('en', {
     zap: 'Zap this goal',
     choose_zap_amount: 'Choose your zap',
     choose_zap_amount_hint: 'Select a suggested amount or enter your own.',
+    sats: 'sats',
     sats_amount: '{amount} sats',
+    zap_amount_button: 'Zap {amount} sats',
     custom_amount: 'Custom amount',
     comment_optional: 'Comment (optional)',
     continue_to_payment: 'Continue to payment',

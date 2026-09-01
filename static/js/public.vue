@@ -81,30 +81,10 @@
             @click="openAmountDialog"
           ></q-btn>
 
-          <q-separator class="q-my-lg"></q-separator>
-          <div v-if="lnurlUrl" class="row items-center q-gutter-sm q-mb-sm">
-            <q-icon name="qr_code_2" aria-hidden="true"></q-icon>
-            <span class="col" v-text="$t('zapgoals.lnurl_pay')"></span>
-            <q-btn
-              flat
-              round
-              dense
-              icon="content_copy"
-              :aria-label="$t('zapgoals.copy_lnurl')"
-              @click="copy(lnurlUrl)"
-            ></q-btn>
-            <q-btn
-              flat
-              round
-              dense
-              icon="open_in_new"
-              type="a"
-              target="_blank"
-              rel="noopener"
-              :href="lnurlUrl"
-              :aria-label="$t('zapgoals.open_lnurl')"
-            ></q-btn>
-          </div>
+          <q-separator
+            v-if="goal.lightning_address || goal.nostr_pubkey"
+            class="q-my-lg"
+          ></q-separator>
           <div
             v-if="goal.lightning_address"
             class="row items-center no-wrap q-mb-sm"
@@ -131,34 +111,50 @@
       </q-card>
     </div>
 
-    <q-dialog v-model="amountDialog" position="top">
-      <q-card class="q-pa-lg lnbits__dialog-card">
+    <q-dialog v-model="amountDialog">
+      <q-card class="zapgoals-amount-dialog q-pa-lg lnbits__dialog-card">
+        <div class="row items-center no-wrap q-mb-md">
+          <q-avatar size="42px" :style="actionStyle" icon="bolt"></q-avatar>
+          <div
+            class="text-h5 text-weight-bold q-ml-md"
+            v-text="$t('zapgoals.choose_zap_amount')"
+          ></div>
+          <q-space></q-space>
+          <q-btn v-close-popup flat round dense icon="close"></q-btn>
+        </div>
+        <div class="zapgoals-selected-amount text-center q-py-md">
+          <div
+            class="zapgoals-selected-value text-weight-bold"
+            v-text="selectedAmountLabel"
+          ></div>
+          <div
+            class="text-h6 text-weight-medium"
+            v-text="$t('zapgoals.sats')"
+          ></div>
+        </div>
         <div
-          class="text-h6 text-center q-mb-sm"
-          v-text="$t('zapgoals.choose_zap_amount')"
-        ></div>
-        <div
-          class="text-body2 text-center text-grey-7 q-mb-lg"
+          class="text-body2 text-center text-grey-6 q-mb-md"
           v-text="$t('zapgoals.choose_zap_amount_hint')"
         ></div>
-        <div class="row q-col-gutter-sm q-mb-md">
+        <div class="row q-col-gutter-sm q-mb-lg">
           <div
             v-for="suggested in suggestedAmounts"
             :key="suggested"
-            class="col-6"
+            class="col-6 col-sm-3"
           >
             <q-btn
               unelevated
               no-caps
-              class="full-width"
+              class="zapgoals-amount-option full-width"
               :outline="Number(amount) !== Number(suggested)"
               :color="
-                Number(amount) === Number(suggested) ? undefined : 'grey-8'
+                Number(amount) === Number(suggested)
+                  ? undefined
+                  : amountOptionColor
               "
               :style="Number(amount) === Number(suggested) ? actionStyle : null"
-              :label="
-                $t('zapgoals.sats_amount', {amount: formatSats(suggested)})
-              "
+              :label="formatSats(suggested)"
+              :disable="creatingInvoice"
               @click="selectSuggestedAmount(suggested)"
             ></q-btn>
           </div>
@@ -166,6 +162,7 @@
         <q-form class="q-gutter-md" @submit.prevent="createInvoice">
           <q-input
             outlined
+            dense
             type="number"
             min="1"
             max="2100000000"
@@ -183,7 +180,7 @@
           <q-input
             outlined
             type="textarea"
-            autogrow
+            rows="3"
             maxlength="280"
             counter
             v-model="comment"
@@ -192,23 +189,14 @@
           <q-btn
             unelevated
             no-caps
-            size="lg"
-            class="full-width"
+            class="zapgoals-zap-action full-width"
             :style="actionStyle"
             icon="bolt"
             type="submit"
             :loading="creatingInvoice"
-            :label="$t('zapgoals.continue_to_payment')"
+            :label="paymentButtonLabel"
           ></q-btn>
         </q-form>
-        <div class="row justify-end q-mt-sm">
-          <q-btn
-            v-close-popup
-            flat
-            color="grey-8"
-            :label="$t('cancel')"
-          ></q-btn>
-        </div>
       </q-card>
     </q-dialog>
 
@@ -271,6 +259,31 @@
 .zapgoals-description {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.zapgoals-amount-dialog {
+  width: min(92vw, 680px);
+  max-width: 680px;
+  border-radius: 20px;
+}
+.zapgoals-selected-amount {
+  min-height: 132px;
+}
+.zapgoals-selected-value {
+  font-size: clamp(3.5rem, 12vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.zapgoals-amount-option {
+  min-height: 54px;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.zapgoals-zap-action {
+  min-height: 58px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 .zapgoals-progress {
   position: relative;
