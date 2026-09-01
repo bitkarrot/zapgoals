@@ -7,6 +7,8 @@ window.PageZapGoalsPublic = {
       loading: true,
       loadError: '',
       amount: null,
+      comment: '',
+      amountDialog: false,
       creatingInvoice: false,
       invoiceDialog: false,
       invoice: null,
@@ -39,6 +41,13 @@ window.PageZapGoalsPublic = {
         backgroundColor: this.goal?.progress_color || '#f59e0b'
       }
     },
+    actionStyle() {
+      const backgroundColor = this.goal?.progress_color || '#f59e0b'
+      return {
+        backgroundColor,
+        color: this.contrastColor(backgroundColor)
+      }
+    },
     actualPercent() {
       if (this.goal?.percent !== undefined && this.goal?.percent !== null) {
         return Number(this.goal.percent) || 0
@@ -56,7 +65,10 @@ window.PageZapGoalsPublic = {
       return `${value >= 1000 ? value.toLocaleString(undefined, {maximumFractionDigits: 1}) : value.toFixed(1)}%`
     },
     walletPayAvailable() {
-      return ['nwc', 'all'].includes(this.goal?.wallet_mode)
+      return this.goal?.wallet_mode === 'all'
+    },
+    suggestedAmounts() {
+      return (this.goal?.suggested_amounts || [21, 100, 500, 1000]).slice(0, 4)
     },
     lnurlUrl() {
       return this.goal?.lnurl_url || this.goal?.lnurl || ''
@@ -149,12 +161,21 @@ window.PageZapGoalsPublic = {
         )
       }
     },
+    openAmountDialog() {
+      this.amount = null
+      this.comment = ''
+      this.amountDialog = true
+    },
+    selectSuggestedAmount(amount) {
+      this.amount = Number(amount)
+    },
     async createInvoice() {
       if (!Number.isInteger(Number(this.amount)) || Number(this.amount) < 1) {
         Quasar.Notify.create({
-          type: 'warning',
+          color: 'grey-10',
+          textColor: 'white',
           message: this.$t('zapgoals.enter_amount'),
-          icon: null
+          icon: 'warning'
         })
         return
       }
@@ -164,9 +185,13 @@ window.PageZapGoalsPublic = {
           'POST',
           `/zapgoals/api/v1/goals/${this.goalId}/invoice`,
           null,
-          {amount: Number(this.amount)}
+          {
+            amount: Number(this.amount),
+            comment: this.comment.trim() || null
+          }
         )
         this.invoice = data
+        this.amountDialog = false
         this.invoiceDialog = true
         this.watchInvoice(data.payment_hash)
       } catch (error) {
@@ -221,7 +246,6 @@ window.PageZapGoalsPublic = {
           showBalance: false,
           persistConnection: true
         }
-        if (this.goal.wallet_mode === 'nwc') config.filters = ['nwc']
         bitcoinConnect.init(config)
         bitcoinConnect.launchPaymentModal({
           invoice: this.invoice.payment_request,
@@ -246,6 +270,7 @@ window.PageZapGoalsPublic = {
       this.invoiceSocket = null
       this.invoice = null
       this.amount = null
+      this.comment = ''
       Quasar.Notify.create({
         type: 'positive',
         message: this.$t('zapgoals.thank_you'),
@@ -258,6 +283,16 @@ window.PageZapGoalsPublic = {
       if (this.invoiceSocket) this.invoiceSocket.close()
       this.invoiceSocket = null
       this.invoice = null
+    },
+    contrastColor(value) {
+      const hex = String(value || '').replace('#', '')
+      if (!/^[0-9a-f]{6}$/i.test(hex)) return '#111827'
+      const channels = [0, 2, 4].map(index =>
+        parseInt(hex.slice(index, index + 2), 16)
+      )
+      const luminance =
+        (channels[0] * 299 + channels[1] * 587 + channels[2] * 114) / 1000
+      return luminance >= 145 ? '#111827' : '#ffffff'
     },
     formatSats(value) {
       return Number(value || 0).toLocaleString()

@@ -15,7 +15,7 @@ ZapGoals requires Python 3.10–3.12 and LNbits 1.5.0 or newer. LNURL-pay works 
 3. Customize the goal colors and, if wanted, configure a Nostr public key and a unique username for a Lightning Address.
 4. Publish or copy the public goal URL. The page updates when tagged contribution invoices settle.
 
-The `vanilla` payment mode presents standard Lightning invoices, `nwc` enables the browser-based Nostr Wallet Connect flow, and `all` offers both. Contributors choose their amount when requesting an invoice or using LNURL-pay. Regardless of mode, only payments created for that goal count toward its progress.
+The `vanilla` payment mode presents standard Lightning invoices, while `all` also enables Bitcoin Connect and its supported wallet connectors. Creators can configure one to four suggested zap amounts; contributors can select one or enter a custom amount and optional comment. Regardless of mode, only payments created for that goal count toward its progress.
 
 Bitcoin Connect is loaded in the browser through a dynamically pinned import. It is intentionally not an npm build dependency.
 
@@ -24,7 +24,7 @@ Bitcoin Connect is loaded in the browser through a dynamically pinned import. It
 Routes are mounted below the extension's `/zapgoals` prefix:
 
 - `GET /zapgoals/api/v1/goals/{goal_id}/public` returns public presentation settings, `goal_amount`, `current_amount`, `target_date`, status, percentage, and payment identifiers.
-- `POST /zapgoals/api/v1/goals/{goal_id}/invoice` with `{"amount": 21}` creates a goal-tagged BOLT11 invoice.
+- `POST /zapgoals/api/v1/goals/{goal_id}/invoice` with `{"amount": 21, "comment": "Great goal"}` creates a goal-tagged BOLT11 invoice.
 - `GET /zapgoals/api/v1/lnurl/{goal_id}` and `GET /zapgoals/api/v1/lnurl/cb/{goal_id}` implement LNURL-pay and NIP-57 callbacks.
 - `GET /.well-known/lnurlp/{username}` resolves an optional Lightning Address when the instance routes Lightning Addresses to this extension.
 - `/api/v1/ws/{goal_id}` is the LNbits core WebSocket used as a realtime invalidation signal; clients should re-fetch the public endpoint after a message.

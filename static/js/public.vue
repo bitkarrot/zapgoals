@@ -70,36 +70,16 @@
             v-text="goal.description_below"
           ></p>
 
-          <q-form class="q-gutter-md" @submit.prevent="createInvoice">
-            <q-input
-              outlined
-              bg-color="white"
-              text-color="dark"
-              type="number"
-              min="1"
-              step="1"
-              inputmode="numeric"
-              v-model.number="amount"
-              :label="$t('zapgoals.zap_amount')"
-              suffix="sats"
-              :rules="[
-                value =>
-                  (Number.isInteger(Number(value)) && Number(value) >= 1) ||
-                  $t('zapgoals.amount_rule')
-              ]"
-            ></q-input>
-            <q-btn
-              unelevated
-              no-caps
-              size="lg"
-              class="full-width"
-              color="primary"
-              icon="bolt"
-              type="submit"
-              :loading="creatingInvoice"
-              :label="$t('zapgoals.zap')"
-            ></q-btn>
-          </q-form>
+          <q-btn
+            unelevated
+            no-caps
+            size="lg"
+            class="full-width"
+            :style="actionStyle"
+            icon="bolt"
+            :label="$t('zapgoals.zap')"
+            @click="openAmountDialog"
+          ></q-btn>
 
           <q-separator class="q-my-lg"></q-separator>
           <div v-if="lnurlUrl" class="row items-center q-gutter-sm q-mb-sm">
@@ -150,6 +130,87 @@
         </q-card-section>
       </q-card>
     </div>
+
+    <q-dialog v-model="amountDialog" position="top">
+      <q-card class="zapgoals-zap-dialog q-pa-lg lnbits__dialog-card">
+        <div
+          class="text-h6 text-center q-mb-sm"
+          v-text="$t('zapgoals.choose_zap_amount')"
+        ></div>
+        <div
+          class="text-body2 text-center text-grey-7 q-mb-lg"
+          v-text="$t('zapgoals.choose_zap_amount_hint')"
+        ></div>
+        <div class="row q-col-gutter-sm q-mb-md">
+          <div
+            v-for="suggested in suggestedAmounts"
+            :key="suggested"
+            class="col-6"
+          >
+            <q-btn
+              unelevated
+              no-caps
+              class="full-width"
+              :outline="Number(amount) !== Number(suggested)"
+              :color="
+                Number(amount) === Number(suggested) ? undefined : 'grey-8'
+              "
+              :style="Number(amount) === Number(suggested) ? actionStyle : null"
+              :label="
+                $t('zapgoals.sats_amount', {amount: formatSats(suggested)})
+              "
+              @click="selectSuggestedAmount(suggested)"
+            ></q-btn>
+          </div>
+        </div>
+        <q-form class="q-gutter-md" @submit.prevent="createInvoice">
+          <q-input
+            outlined
+            type="number"
+            min="1"
+            max="2100000000"
+            step="1"
+            inputmode="numeric"
+            v-model.number="amount"
+            :label="$t('zapgoals.custom_amount')"
+            suffix="sats"
+            :rules="[
+              value =>
+                (Number.isInteger(Number(value)) && Number(value) >= 1) ||
+                $t('zapgoals.amount_rule')
+            ]"
+          ></q-input>
+          <q-input
+            outlined
+            type="textarea"
+            autogrow
+            maxlength="280"
+            counter
+            v-model="comment"
+            :label="$t('zapgoals.comment_optional')"
+          ></q-input>
+          <q-btn
+            unelevated
+            no-caps
+            size="lg"
+            class="full-width"
+            :style="actionStyle"
+            icon="bolt"
+            type="submit"
+            :loading="creatingInvoice"
+            :label="$t('zapgoals.continue_to_payment')"
+          ></q-btn>
+        </q-form>
+        <div class="row justify-end q-mt-sm">
+          <q-btn
+            v-close-popup
+            flat
+            color="grey-8"
+            :label="$t('cancel')"
+          ></q-btn>
+        </div>
+      </q-card>
+    </q-dialog>
 
     <q-dialog v-model="invoiceDialog" position="top" @hide="closeInvoice">
       <q-card v-if="invoice" class="q-pa-lg lnbits__dialog-card">
@@ -221,6 +282,24 @@
 .zapgoals-description {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.zapgoals-zap-dialog {
+  background: #fff;
+  color: #111827;
+}
+.zapgoals-zap-dialog .q-field__native,
+.zapgoals-zap-dialog .q-field__input,
+.zapgoals-zap-dialog .q-field__label,
+.zapgoals-zap-dialog .q-field__suffix,
+.zapgoals-zap-dialog .q-field__marginal {
+  color: #111827 !important;
+}
+.zapgoals-zap-dialog .q-field__bottom {
+  color: #991b1b !important;
+  font-weight: 600;
+}
+.zapgoals-zap-dialog .q-field--outlined .q-field__control::before {
+  border-color: #6b7280;
 }
 .zapgoals-progress {
   position: relative;

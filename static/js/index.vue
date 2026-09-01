@@ -263,6 +263,37 @@
                 ></q-input>
               </div>
             </div>
+            <div>
+              <div
+                class="text-subtitle2"
+                v-text="$t('zapgoals.suggested_amounts')"
+              ></div>
+              <div
+                class="text-caption text-grey-6 q-mb-sm"
+                v-text="$t('zapgoals.suggested_amounts_hint')"
+              ></div>
+              <div class="row q-col-gutter-sm">
+                <div
+                  v-for="index in 4"
+                  :key="`suggested-${index}`"
+                  class="col-6 col-sm-3"
+                >
+                  <q-input
+                    filled
+                    type="number"
+                    min="1"
+                    max="2100000000"
+                    step="1"
+                    v-model.number="
+                      formDialog.data.suggested_amounts[index - 1]
+                    "
+                    :label="$t('zapgoals.suggested_amount', {index})"
+                    suffix="sats"
+                    :rules="[suggestedAmountRule]"
+                  ></q-input>
+                </div>
+              </div>
+            </div>
             <div class="row q-col-gutter-md">
               <div class="col-12 col-sm-6">
                 <q-select

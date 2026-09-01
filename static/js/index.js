@@ -13,9 +13,8 @@ window.PageZapGoals = {
         {label: 'Monospace', value: 'monospace'}
       ],
       modeOptions: [
-        {label: 'Vanilla only', value: 'vanilla'},
-        {label: 'NWC only', value: 'nwc'},
-        {label: 'All Bitcoin Connect', value: 'all'}
+        {label: 'Vanilla invoice only', value: 'vanilla'},
+        {label: 'Bitcoin Connect', value: 'all'}
       ]
     }
   },
@@ -95,6 +94,7 @@ window.PageZapGoals = {
         description_below: '',
         goal_amount: 10000,
         target_date: '',
+        suggested_amounts: [21, 100, 500, 1000],
         wallet_mode: 'vanilla',
         background_color: '#ffffff',
         text_color: '#1f2937',
@@ -143,7 +143,16 @@ window.PageZapGoals = {
         show: true,
         editing: Boolean(goal),
         data: goal
-          ? {...goal, target_date: this.toLocalDateTime(goal.target_date)}
+          ? {
+              ...goal,
+              target_date: this.toLocalDateTime(goal.target_date),
+              suggested_amounts: [
+                ...(goal.suggested_amounts || [21, 100, 500, 1000])
+              ]
+                .concat(Array(4).fill(null))
+                .slice(0, 4),
+              wallet_mode: goal.wallet_mode === 'nwc' ? 'all' : goal.wallet_mode
+            }
           : this.emptyGoal()
       }
     },
@@ -154,6 +163,20 @@ window.PageZapGoals = {
       const valid = await this.$refs.goalForm.validate()
       if (!valid) return
       const data = this.formDialog.data
+      const suggestedAmounts = (data.suggested_amounts || [])
+        .filter(value => value !== null && value !== '')
+        .map(Number)
+      if (
+        !suggestedAmounts.length ||
+        new Set(suggestedAmounts).size !== suggestedAmounts.length
+      ) {
+        Quasar.Notify.create({
+          type: 'negative',
+          message: this.$t('zapgoals.suggested_amounts_rule'),
+          icon: null
+        })
+        return
+      }
       const wallet = this.walletFor(data.wallet)
       if (!wallet) return
       const payload = {
@@ -163,6 +186,7 @@ window.PageZapGoals = {
         description_below: (data.description_below || '').trim(),
         goal_amount: Number(data.goal_amount),
         target_date: new Date(data.target_date).toISOString(),
+        suggested_amounts: suggestedAmounts,
         wallet_mode: data.wallet_mode,
         background_color: data.background_color,
         text_color: data.text_color,
@@ -248,6 +272,16 @@ window.PageZapGoals = {
         return this.$t('zapgoals.expired')
       }
       return this.$t('zapgoals.active')
+    },
+    suggestedAmountRule(value) {
+      return (
+        value === null ||
+        value === '' ||
+        (Number.isInteger(Number(value)) &&
+          Number(value) >= 1 &&
+          Number(value) <= 2100000000) ||
+        this.$t('zapgoals.amount_rule')
+      )
     },
     titleRule(value) {
       return (

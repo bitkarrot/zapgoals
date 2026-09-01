@@ -48,3 +48,13 @@ async def m001_initial(db):
             nostr_private_key TEXT NOT NULL
         )
         """)
+
+
+async def m002_suggested_amounts_and_wallet_modes(db):
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN suggested_amounts TEXT NOT NULL DEFAULT '[21,100,500,1000]'
+        """)
+    await db.execute("""
+        UPDATE zapgoals.goals SET wallet_mode = 'all' WHERE wallet_mode = 'nwc'
+        """)

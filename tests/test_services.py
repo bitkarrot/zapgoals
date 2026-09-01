@@ -25,7 +25,7 @@ def make_goal(**overrides):
         "goal_amount": 100_000,
         "target_date": datetime.now(timezone.utc) + timedelta(days=30),
         "current_amount": 85_127,
-        "wallet_mode": WalletMode.nwc,
+        "wallet_mode": WalletMode.all,
         "background_color": "#202B3B",
         "text_color": "#FFFFFF",
         "progress_color": "#FF7900",
@@ -74,7 +74,11 @@ def test_create_goal_invoice_tags_and_records_contribution(monkeypatch):
     monkeypatch.setattr(services, "create_payment_request", create_payment)
     monkeypatch.setattr(services, "create_contribution", create_contribution)
 
-    result = asyncio.run(services.create_goal_invoice(make_goal(), 21, "invoice"))
+    result = asyncio.run(
+        services.create_goal_invoice(
+            make_goal(), 21, "invoice", extra={"comment": "great goal"}
+        )
+    )
 
     payment_call = create_payment.await_args
     assert payment_call is not None
@@ -84,6 +88,7 @@ def test_create_goal_invoice_tags_and_records_contribution(monkeypatch):
         "tag": "zapgoals",
         "goal_id": "goal123",
         "source": "invoice",
+        "comment": "great goal",
     }
     create_contribution.assert_awaited_once_with("ab" * 32, "goal123", 21, "invoice")
     assert result.payment_request == "lnbc1invoice"

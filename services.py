@@ -67,6 +67,7 @@ def public_goal(goal: Goal, request: Request) -> PublicGoal:
         goal_amount=goal.goal_amount,
         current_amount=goal.current_amount,
         target_date=goal.target_date,
+        suggested_amounts=goal.suggested_amounts,
         colors={
             "background": goal.background_color,
             "text": goal.text_color,

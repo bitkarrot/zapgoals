@@ -12,7 +12,6 @@ PUBKEY_RE = re.compile(r"^[0-9a-f]{64}$")
 
 class WalletMode(str, Enum):
     vanilla = "vanilla"
-    nwc = "nwc"
     all = "all"
 
 
@@ -22,6 +21,7 @@ class GoalData(BaseModel):
     description_below: str = Field("", max_length=2000)
     goal_amount: int = Field(..., gt=0, le=MAX_SATS)
     target_date: datetime
+    suggested_amounts: list[int] = Field(default_factory=lambda: [21, 100, 500, 1000])
     wallet_mode: WalletMode = WalletMode.vanilla
     background_color: str = "#FFFFFF"
     text_color: str = "#111111"
@@ -47,6 +47,20 @@ class GoalData(BaseModel):
     def safe_font(cls, value):
         if value not in {"sans-serif", "serif", "monospace"}:
             raise ValueError("unsupported font family")
+        return value
+
+    @validator("suggested_amounts", pre=True)
+    def valid_suggested_amounts(cls, value):
+        if not isinstance(value, list) or not 1 <= len(value) <= 4:
+            raise ValueError("provide between one and four suggested amounts")
+        if any(
+            not isinstance(amount, int) or isinstance(amount, bool) for amount in value
+        ):
+            raise ValueError("suggested amounts must be whole sat amounts")
+        if len(set(value)) != len(value):
+            raise ValueError("suggested amounts must be unique")
+        if any(amount < 1 or amount > MAX_SATS for amount in value):
+            raise ValueError("suggested amounts must be valid whole sat amounts")
         return value
 
     @validator("nostr_pubkey")
@@ -88,6 +102,7 @@ class PublicGoal(BaseModel):
     goal_amount: int
     current_amount: int
     target_date: datetime
+    suggested_amounts: list[int]
     colors: dict
     background_color: str
     text_color: str
@@ -122,6 +137,15 @@ class Contribution(BaseModel):
 
 class InvoiceRequest(BaseModel):
     amount: int = Field(..., ge=1, le=MAX_SATS)
+    comment: str | None = Field(None, max_length=280)
+
+    @validator("comment")
+    def plain_comment(cls, value):
+        if value is None or not value.strip():
+            return None
+        if "\x00" in value:
+            raise ValueError("NUL characters are not allowed")
+        return value.strip()
 
 
 class InvoiceResponse(BaseModel):

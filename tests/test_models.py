@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from pydantic import ValidationError
 
-from ..models import GoalData, WalletMode
+from ..models import GoalData, InvoiceRequest, WalletMode
 
 
 def valid_goal_data(**overrides):
@@ -49,15 +49,33 @@ def test_goal_colors_are_normalized_and_validated():
         GoalData(**valid_goal_data(background_color="aabbcc"))
 
 
-@pytest.mark.parametrize("mode", ["vanilla", "nwc", "all"])
+@pytest.mark.parametrize("mode", ["vanilla", "all"])
 def test_supported_wallet_modes(mode):
     goal = GoalData(**valid_goal_data(wallet_mode=mode))
     assert goal.wallet_mode is WalletMode(mode)
 
 
-def test_unknown_wallet_mode_is_rejected():
+@pytest.mark.parametrize("mode", ["nwc", "unknown"])
+def test_unknown_wallet_mode_is_rejected(mode):
     with pytest.raises(ValidationError):
-        GoalData(**valid_goal_data(wallet_mode="unknown"))
+        GoalData(**valid_goal_data(wallet_mode=mode))
+
+
+def test_suggested_amounts_are_limited_and_unique():
+    goal = GoalData(**valid_goal_data(suggested_amounts=[21, 100, 500, 1000]))
+    assert goal.suggested_amounts == [21, 100, 500, 1000]
+
+    for values in ([], [1, 2, 3, 4, 5], [21, 21], [0, 21]):
+        with pytest.raises(ValidationError):
+            GoalData(**valid_goal_data(suggested_amounts=values))
+
+
+def test_invoice_comment_is_trimmed_and_limited():
+    assert InvoiceRequest(amount=21, comment="  great goal  ").comment == "great goal"
+    assert InvoiceRequest(amount=21, comment="   ").comment is None
+
+    with pytest.raises(ValidationError):
+        InvoiceRequest(amount=21, comment="x" * 281)
 
 
 def test_nostr_pubkey_requires_lowercase_hex():

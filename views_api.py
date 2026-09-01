@@ -120,7 +120,8 @@ async def api_goal_invoice(goal_id: str, data: InvoiceRequest) -> InvoiceRespons
     if not goal:
         raise _not_found()
     try:
-        return await create_goal_invoice(goal, data.amount, "invoice")
+        extra = {"comment": data.comment} if data.comment else None
+        return await create_goal_invoice(goal, data.amount, "invoice", extra=extra)
     except Exception as exc:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail="Unable to create invoice"
