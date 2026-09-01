@@ -1,6 +1,6 @@
 {
   "id": "zapgoals",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "name": "ZapGoals",
   "repo": "https://github.com/bitkarrot/zapgoals",
   "short_description": "Create shareable Lightning funding goals",

@@ -12,7 +12,6 @@ window.PageZapGoalsPublic = {
       creatingInvoice: false,
       invoiceDialog: false,
       invoice: null,
-      walletPayLoading: false,
       goalSocket: null,
       invoiceSocket: null,
       goalReconnectTimer: null,
@@ -166,10 +165,12 @@ window.PageZapGoalsPublic = {
       this.comment = ''
       this.amountDialog = true
     },
-    selectSuggestedAmount(amount) {
+    async selectSuggestedAmount(amount) {
       this.amount = Number(amount)
+      if (this.walletPayAvailable) await this.createInvoice()
     },
     async createInvoice() {
+      if (this.creatingInvoice) return
       if (!Number.isInteger(Number(this.amount)) || Number(this.amount) < 1) {
         Quasar.Notify.create({
           color: 'grey-10',
@@ -180,6 +181,27 @@ window.PageZapGoalsPublic = {
         return
       }
       this.creatingInvoice = true
+      let bitcoinConnect = null
+      if (this.walletPayAvailable) {
+        try {
+          bitcoinConnect =
+            await import('https://esm.sh/@getalby/bitcoin-connect@3.12.3')
+          bitcoinConnect.init({
+            appName: 'ZapGoals',
+            showBalance: false,
+            persistConnection: true
+          })
+        } catch (error) {
+          console.error('Bitcoin Connect failed to load', error)
+          Quasar.Notify.create({
+            type: 'negative',
+            message: this.$t('zapgoals.wallet_load_error'),
+            icon: null
+          })
+          this.creatingInvoice = false
+          return
+        }
+      }
       try {
         const {data} = await LNbits.api.request(
           'POST',
@@ -192,8 +214,28 @@ window.PageZapGoalsPublic = {
         )
         this.invoice = data
         this.amountDialog = false
-        this.invoiceDialog = true
         this.watchInvoice(data.payment_hash)
+        if (bitcoinConnect) {
+          try {
+            bitcoinConnect.launchPaymentModal({
+              invoice: data.payment_request,
+              paymentMethods: 'internal',
+              onPaid: () => this.paymentComplete(),
+              onCancelled: () => this.bitcoinConnectCancelled()
+            })
+          } catch (error) {
+            console.error('Bitcoin Connect failed to open', error)
+            this.closeInvoice()
+            this.amountDialog = true
+            Quasar.Notify.create({
+              type: 'negative',
+              message: this.$t('zapgoals.wallet_load_error'),
+              icon: null
+            })
+          }
+        } else {
+          this.invoiceDialog = true
+        }
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       } finally {
@@ -223,7 +265,7 @@ window.PageZapGoalsPublic = {
       socket.onclose = () => {
         if (this.invoiceSocket !== socket) return
         this.invoiceSocket = null
-        if (this.destroyed || !this.invoiceDialog || !this.invoice) return
+        if (this.destroyed || !this.invoice) return
         const delay = Math.min(10000, 1500 * 2 ** this.invoiceReconnectAttempt)
         this.invoiceReconnectAttempt = Math.min(
           this.invoiceReconnectAttempt + 1,
@@ -235,32 +277,10 @@ window.PageZapGoalsPublic = {
         )
       }
     },
-    async payWithWallet() {
-      if (!this.invoice?.payment_request) return
-      this.walletPayLoading = true
-      try {
-        const bitcoinConnect =
-          await import('https://esm.sh/@getalby/bitcoin-connect@3.12.3')
-        const config = {
-          appName: 'ZapGoals',
-          showBalance: false,
-          persistConnection: true
-        }
-        bitcoinConnect.init(config)
-        bitcoinConnect.launchPaymentModal({
-          invoice: this.invoice.payment_request,
-          onPaid: () => this.paymentComplete()
-        })
-      } catch (error) {
-        console.error('Bitcoin Connect failed to load', error)
-        Quasar.Notify.create({
-          type: 'negative',
-          message: this.$t('zapgoals.wallet_load_error'),
-          icon: null
-        })
-      } finally {
-        this.walletPayLoading = false
-      }
+    bitcoinConnectCancelled() {
+      if (!this.invoice) return
+      this.closeInvoice()
+      this.amountDialog = true
     },
     paymentComplete() {
       if (!this.invoice && !this.invoiceDialog) return

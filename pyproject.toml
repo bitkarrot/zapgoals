@@ -1,6 +1,6 @@
 [project]
 name = "lnbits-zapgoals"
-version = "0.1.0"
+version = "0.1.1"
 requires-python = ">=3.10,<3.13"
 description = "LNbits extension for shareable Lightning funding goals."
 authors = [{ name = "bitkarrot" }]

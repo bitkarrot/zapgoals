@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Any
 
 from lnbits.db import Database
 from lnbits.helpers import urlsafe_short_hash
@@ -84,20 +83,10 @@ async def get_contribution(payment_hash: str) -> Contribution | None:
     )
 
 
-async def has_paid_contributions(goal_id: str) -> bool:
-    row: Any = await db.fetchone(
-        "SELECT payment_hash FROM zapgoals.contributions "
-        "WHERE goal_id = :goal_id AND paid = true LIMIT 1",
-        {"goal_id": goal_id},
-    )
-    return bool(row)
-
-
-async def delete_goal_and_unpaid_contributions(goal_id: str) -> None:
+async def delete_goal_and_contributions(goal_id: str) -> None:
     async with db.connect() as conn:
         await conn.execute(
-            "DELETE FROM zapgoals.contributions "
-            "WHERE goal_id = :goal_id AND paid = false",
+            "DELETE FROM zapgoals.contributions WHERE goal_id = :goal_id",
             {"goal_id": goal_id},
         )
         await conn.execute(

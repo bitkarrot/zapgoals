@@ -132,7 +132,7 @@
     </div>
 
     <q-dialog v-model="amountDialog" position="top">
-      <q-card class="zapgoals-zap-dialog q-pa-lg lnbits__dialog-card">
+      <q-card class="q-pa-lg lnbits__dialog-card">
         <div
           class="text-h6 text-center q-mb-sm"
           v-text="$t('zapgoals.choose_zap_amount')"
@@ -247,17 +247,6 @@
             ></q-btn>
           </template>
         </q-input>
-        <q-btn
-          v-if="walletPayAvailable"
-          unelevated
-          no-caps
-          color="primary"
-          icon="account_balance_wallet"
-          class="full-width q-mt-md"
-          :loading="walletPayLoading"
-          :label="$t('zapgoals.pay_with_wallet')"
-          @click="payWithWallet"
-        ></q-btn>
         <div class="row justify-end q-mt-md">
           <q-btn v-close-popup flat color="grey" :label="$t('close')"></q-btn>
         </div>
@@ -282,24 +271,6 @@
 .zapgoals-description {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-.zapgoals-zap-dialog {
-  background: #fff;
-  color: #111827;
-}
-.zapgoals-zap-dialog .q-field__native,
-.zapgoals-zap-dialog .q-field__input,
-.zapgoals-zap-dialog .q-field__label,
-.zapgoals-zap-dialog .q-field__suffix,
-.zapgoals-zap-dialog .q-field__marginal {
-  color: #111827 !important;
-}
-.zapgoals-zap-dialog .q-field__bottom {
-  color: #991b1b !important;
-  font-weight: 600;
-}
-.zapgoals-zap-dialog .q-field--outlined .q-field__control::before {
-  border-color: #6b7280;
 }
 .zapgoals-progress {
   position: relative;

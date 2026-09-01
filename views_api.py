@@ -13,11 +13,10 @@ from pydantic import parse_obj_as
 
 from .crud import (
     create_goal,
-    delete_goal_and_unpaid_contributions,
+    delete_goal_and_contributions,
     get_goal,
     get_goal_by_username,
     get_goals,
-    has_paid_contributions,
     update_goal,
 )
 from .models import (
@@ -98,12 +97,7 @@ async def api_delete_goal(
     if not goal:
         raise _not_found()
     _check_owner(goal, wallet)
-    if await has_paid_contributions(goal.id):
-        raise HTTPException(
-            status_code=HTTPStatus.CONFLICT,
-            detail="Goals with paid contributions cannot be deleted",
-        )
-    await delete_goal_and_unpaid_contributions(goal.id)
+    await delete_goal_and_contributions(goal.id)
 
 
 @zapgoals_api_router.get("/goals/{goal_id}/public", response_model=PublicGoal)
