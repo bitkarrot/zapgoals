@@ -184,21 +184,33 @@
           <div class="text-h6" v-text="$t('zapgoals.about_title')"></div>
           <p v-text="$t('zapgoals.about_body')"></p>
           <q-list bordered separator class="rounded-borders q-mb-md">
-            <q-expansion-item
-              dense
-              icon="alternate_email"
-              :label="$t('zapgoals.about_lightning_title')"
-            >
+            <q-expansion-item dense>
+              <template v-slot:header>
+                <q-item-section avatar class="zapgoals-about-icon">
+                  <q-icon name="alternate_email"></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label
+                    v-text="$t('zapgoals.about_lightning_title')"
+                  ></q-item-label>
+                </q-item-section>
+              </template>
               <div
                 class="q-pa-md text-body2"
                 v-text="$t('zapgoals.about_lightning_body')"
               ></div>
             </q-expansion-item>
-            <q-expansion-item
-              dense
-              icon="electric_bolt"
-              :label="$t('zapgoals.about_nostr_title')"
-            >
+            <q-expansion-item dense>
+              <template v-slot:header>
+                <q-item-section avatar class="zapgoals-about-icon">
+                  <q-icon name="bolt"></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label
+                    v-text="$t('zapgoals.about_nostr_title')"
+                  ></q-item-label>
+                </q-item-section>
+              </template>
               <div
                 class="q-pa-md text-body2"
                 v-text="$t('zapgoals.about_nostr_body')"
@@ -496,6 +508,11 @@
 </template>
 
 <style>
+.zapgoals-about-icon {
+  flex: 0 0 56px;
+  min-width: 56px;
+  align-items: center;
+}
 .zapgoals-preview-track {
   position: relative;
   height: 2.25rem;

@@ -12,6 +12,7 @@ window.PageZapGoalsPublic = {
       creatingInvoice: false,
       invoiceDialog: false,
       invoice: null,
+      bitcoinConnectPayment: null,
       goalSocket: null,
       invoiceSocket: null,
       goalReconnectTimer: null,
@@ -158,6 +159,9 @@ window.PageZapGoalsPublic = {
       }
       socket.onmessage = () => {
         this.getGoal(true)
+        if (this.invoice?.payment_hash) {
+          this.checkInvoiceStatus(this.invoice.payment_hash)
+        }
       }
       socket.onerror = () => socket.close()
       socket.onclose = () => {
@@ -229,7 +233,7 @@ window.PageZapGoalsPublic = {
         this.watchInvoice(data.payment_hash)
         if (bitcoinConnect) {
           try {
-            bitcoinConnect.launchPaymentModal({
+            this.bitcoinConnectPayment = bitcoinConnect.launchPaymentModal({
               invoice: data.payment_request,
               paymentMethods: 'all',
               onPaid: () => this.paymentComplete(),
@@ -264,12 +268,13 @@ window.PageZapGoalsPublic = {
       this.invoiceSocket = socket
       socket.onopen = () => {
         this.invoiceReconnectAttempt = 0
+        this.checkInvoiceStatus(paymentHash)
       }
       socket.onmessage = event => {
         try {
           const message = JSON.parse(event.data)
           if (message.pending === false && message.status === 'success') {
-            this.paymentComplete()
+            this.markPaymentComplete()
           }
         } catch (_) {}
       }
@@ -289,13 +294,34 @@ window.PageZapGoalsPublic = {
         )
       }
     },
+    async checkInvoiceStatus(paymentHash) {
+      if (!paymentHash || this.invoice?.payment_hash !== paymentHash) return
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          `/api/v1/payments/${paymentHash}`
+        )
+        if (data.paid === true) this.markPaymentComplete()
+      } catch (_) {}
+    },
+    markPaymentComplete() {
+      if (this.bitcoinConnectPayment?.setPaid) {
+        const payment = this.bitcoinConnectPayment
+        this.bitcoinConnectPayment = null
+        payment.setPaid({preimage: ''})
+        return
+      }
+      this.paymentComplete()
+    },
     bitcoinConnectCancelled() {
       if (!this.invoice) return
+      this.bitcoinConnectPayment = null
       this.closeInvoice()
       this.amountDialog = true
     },
     paymentComplete() {
       if (!this.invoice && !this.invoiceDialog) return
+      this.bitcoinConnectPayment = null
       this.invoiceDialog = false
       window.clearTimeout(this.invoiceReconnectTimer)
       if (this.invoiceSocket) this.invoiceSocket.close()
