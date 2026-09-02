@@ -368,7 +368,7 @@
               </div>
             </div>
             <div class="row q-col-gutter-md">
-              <div class="col-12 col-sm-6">
+              <div class="col-12 col-sm-4">
                 <q-select
                   filled
                   emit-value
@@ -378,14 +378,24 @@
                   :label="$t('zapgoals.payment_mode')"
                 ></q-select>
               </div>
-              <div class="col-12 col-sm-6">
+              <div class="col-12 col-sm-4">
                 <q-select
                   filled
                   emit-value
                   map-options
-                  v-model="formDialog.data.font_family"
+                  v-model="formDialog.data.font_name"
                   :options="fontOptions"
                   :label="$t('zapgoals.font')"
+                ></q-select>
+              </div>
+              <div class="col-12 col-sm-4">
+                <q-select
+                  filled
+                  emit-value
+                  map-options
+                  v-model="formDialog.data.font_weight"
+                  :options="fontWeightOptions"
+                  :label="$t('zapgoals.font_weight')"
                 ></q-select>
               </div>
             </div>

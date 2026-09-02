@@ -9,8 +9,22 @@ window.PageZapGoals = {
       formDialog: {show: false, editing: false, data: {}},
       fontOptions: [
         {label: 'Sans serif', value: 'sans-serif'},
+        {label: 'System UI', value: 'system-ui, sans-serif'},
+        {label: 'Arial', value: 'Arial, sans-serif'},
+        {label: 'Trebuchet', value: '"Trebuchet MS", sans-serif'},
+        {label: 'Verdana', value: 'Verdana, sans-serif'},
+        {label: 'Tahoma', value: 'Tahoma, sans-serif'},
         {label: 'Serif', value: 'serif'},
-        {label: 'Monospace', value: 'monospace'}
+        {label: 'Georgia', value: 'Georgia, serif'},
+        {label: 'Times New Roman', value: '"Times New Roman", serif'},
+        {label: 'Monospace', value: 'monospace'},
+        {label: 'Courier New', value: '"Courier New", monospace'}
+      ],
+      fontWeightOptions: [
+        {label: 'Regular', value: 400},
+        {label: 'Semi-bold', value: 600},
+        {label: 'Bold', value: 700},
+        {label: 'Extra-bold', value: 800}
       ],
       modeOptions: [
         {label: 'Vanilla invoice only', value: 'vanilla'},
@@ -67,7 +81,8 @@ window.PageZapGoals = {
       return {
         backgroundColor: data.background_color || '#ffffff',
         color: data.text_color || '#1f2937',
-        fontFamily: data.font_family || 'sans-serif'
+        fontFamily: data.font_name || data.font_family || 'sans-serif',
+        fontWeight: Number(data.font_weight) || 400
       }
     },
     previewFillStyle() {
@@ -101,6 +116,8 @@ window.PageZapGoals = {
         progress_color: '#f59e0b',
         remainder_color: '#e5e7eb',
         font_family: 'sans-serif',
+        font_name: 'sans-serif',
+        font_weight: 400,
         nostr_pubkey: null,
         lightning_address_username: null,
         current_amount: 0
@@ -151,7 +168,10 @@ window.PageZapGoals = {
               ]
                 .concat(Array(4).fill(null))
                 .slice(0, 4),
-              wallet_mode: goal.wallet_mode === 'nwc' ? 'all' : goal.wallet_mode
+              wallet_mode:
+                goal.wallet_mode === 'nwc' ? 'all' : goal.wallet_mode,
+              font_name: goal.font_name || goal.font_family || 'sans-serif',
+              font_weight: Number(goal.font_weight) || 400
             }
           : this.emptyGoal()
       }
@@ -193,6 +213,8 @@ window.PageZapGoals = {
         progress_color: data.progress_color,
         remainder_color: data.remainder_color,
         font_family: data.font_family,
+        font_name: data.font_name,
+        font_weight: Number(data.font_weight),
         nostr_pubkey: data.nostr_pubkey?.trim().toLowerCase() || null,
         lightning_address_username:
           data.lightning_address_username?.trim().toLowerCase() || null

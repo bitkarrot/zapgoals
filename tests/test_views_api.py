@@ -24,6 +24,8 @@ def partially_funded_goal() -> Goal:
         current_amount=250,
         target_date=now + timedelta(days=30),
         wallet_mode=WalletMode.vanilla,
+        font_name="sans-serif",
+        font_weight=400,
         nostr_pubkey=None,
         lightning_address_username=None,
         created_at=now,

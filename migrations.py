@@ -58,3 +58,15 @@ async def m002_suggested_amounts_and_wallet_modes(db):
     await db.execute("""
         UPDATE zapgoals.goals SET wallet_mode = 'all' WHERE wallet_mode = 'nwc'
         """)
+
+
+async def m003_font_name_and_weight(db):
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN font_name TEXT NOT NULL DEFAULT 'sans-serif'
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN font_weight INTEGER NOT NULL DEFAULT 400
+        """)
+    await db.execute("UPDATE zapgoals.goals SET font_name = font_family")

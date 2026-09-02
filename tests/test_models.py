@@ -30,6 +30,32 @@ def test_goal_target_amount_and_date_are_validated():
         GoalData(**valid_goal_data(target_date=datetime.now()))
 
 
+@pytest.mark.parametrize(
+    "font_name",
+    [
+        "sans-serif",
+        "system-ui, sans-serif",
+        "Arial, sans-serif",
+        '"Trebuchet MS", sans-serif',
+        "Verdana, sans-serif",
+        "Tahoma, sans-serif",
+        "Georgia, serif",
+        '"Times New Roman", serif',
+        '"Courier New", monospace',
+    ],
+)
+def test_supported_font_names_and_weights(font_name):
+    for weight in (400, 600, 700, 800):
+        goal = GoalData(**valid_goal_data(font_name=font_name, font_weight=weight))
+        assert goal.font_name == font_name
+        assert goal.font_weight == weight
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(font_name="url(https://example.com/font.woff)"))
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(font_weight=900))
+
+
 def test_goal_colors_are_normalized_and_validated():
     goal = GoalData(
         **valid_goal_data(

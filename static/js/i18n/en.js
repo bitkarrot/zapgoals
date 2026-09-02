@@ -24,7 +24,8 @@ window.i18n.global.mergeLocaleMessage('en', {
     suggested_amounts_rule:
       'Configure at least one suggested amount and do not use duplicates.',
     payment_mode: 'Wallet payment mode',
-    font: 'Font',
+    font: 'Font family',
+    font_weight: 'Font weight',
     background: 'Background',
     text: 'Text',
     progress_color: 'Progress',

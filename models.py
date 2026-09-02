@@ -8,6 +8,20 @@ MAX_SATS = 2_100_000_000
 COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 USERNAME_RE = re.compile(r"^[a-z0-9._-]+$")
 PUBKEY_RE = re.compile(r"^[0-9a-f]{64}$")
+FONT_NAMES = {
+    "sans-serif",
+    "serif",
+    "monospace",
+    "system-ui, sans-serif",
+    "Arial, sans-serif",
+    '"Trebuchet MS", sans-serif',
+    "Verdana, sans-serif",
+    "Tahoma, sans-serif",
+    "Georgia, serif",
+    '"Times New Roman", serif',
+    '"Courier New", monospace',
+}
+FONT_WEIGHTS = {400, 600, 700, 800}
 
 
 class WalletMode(str, Enum):
@@ -38,6 +52,8 @@ class GoalData(BaseModel):
     progress_color: str = "#2E7D32"
     remainder_color: str = "#E0E0E0"
     font_family: str = "sans-serif"
+    font_name: str = Field("sans-serif", description="Validated CSS font-family stack.")
+    font_weight: int = Field(400, description="Font weight from 400 to 800.")
     nostr_pubkey: str | None = Field(
         None, description="Recipient Nostr public key as 64 lowercase hex characters."
     )
@@ -63,6 +79,18 @@ class GoalData(BaseModel):
     def safe_font(cls, value):
         if value not in {"sans-serif", "serif", "monospace"}:
             raise ValueError("unsupported font family")
+        return value
+
+    @validator("font_name")
+    def safe_font_name(cls, value):
+        if value not in FONT_NAMES:
+            raise ValueError("unsupported font name")
+        return value
+
+    @validator("font_weight")
+    def safe_font_weight(cls, value):
+        if value not in FONT_WEIGHTS:
+            raise ValueError("unsupported font weight")
         return value
 
     @validator("suggested_amounts", pre=True)
@@ -130,6 +158,8 @@ class PublicGoal(BaseModel):
     remainder_color: str
     font: str
     font_family: str
+    font_name: str
+    font_weight: int
     wallet_mode: WalletMode
     status: str
     percent: float

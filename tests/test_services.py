@@ -31,6 +31,8 @@ def make_goal(**overrides):
         "progress_color": "#FF7900",
         "remainder_color": "#20D4D8",
         "font_family": "sans-serif",
+        "font_name": "Arial, sans-serif",
+        "font_weight": 700,
         "nostr_pubkey": None,
         "lightning_address_username": None,
         "created_at": datetime.now(timezone.utc),
@@ -54,6 +56,8 @@ def test_public_goal_contains_required_fields_without_wallet_secrets(monkeypatch
     assert data["current_amount"] == 85_127
     assert data["target_date"] == goal.target_date
     assert data["lnurl_url"].endswith("/goal123")
+    assert data["font_name"] == "Arial, sans-serif"
+    assert data["font_weight"] == 700
     assert data["lightning_address"] is None
     assert "wallet" not in data
     assert "key" not in data
@@ -162,6 +166,8 @@ def test_goal_data_accepts_long_time_periods():
         goal_amount=100,
         target_date=datetime.now(timezone.utc) + timedelta(days=3650),
         wallet_mode=WalletMode.vanilla,
+        font_name="sans-serif",
+        font_weight=400,
         nostr_pubkey=None,
         lightning_address_username=None,
     )

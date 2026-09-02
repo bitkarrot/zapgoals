@@ -29,7 +29,9 @@ window.PageZapGoalsPublic = {
       return {
         backgroundColor: this.goal?.background_color || '#ffffff',
         color: this.goal?.text_color || '#1f2937',
-        fontFamily: this.goal?.font_family || 'sans-serif'
+        fontFamily:
+          this.goal?.font_name || this.goal?.font_family || 'sans-serif',
+        fontWeight: Number(this.goal?.font_weight) || 400
       }
     },
     trackStyle() {
