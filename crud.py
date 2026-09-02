@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from lnbits.db import Database
 from lnbits.helpers import urlsafe_short_hash
@@ -80,6 +80,16 @@ async def get_contribution(payment_hash: str) -> Contribution | None:
         "SELECT * FROM zapgoals.contributions WHERE payment_hash = :payment_hash",
         {"payment_hash": payment_hash},
         Contribution,
+    )
+
+
+async def purge_expired_unpaid_contributions(goal_id: str, expiry_seconds: int) -> None:
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=expiry_seconds)
+    await db.execute(
+        "DELETE FROM zapgoals.contributions WHERE goal_id = :goal_id "
+        "AND paid = false AND created_at < "
+        f"{db.timestamp_placeholder('cutoff')}",
+        {"goal_id": goal_id, "cutoff": cutoff},
     )
 
 

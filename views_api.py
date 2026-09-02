@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from lnbits.core.models import WalletTypeInfo
 from lnbits.decorators import require_admin_key, require_invoice_key
 from lnurl import (
@@ -48,14 +48,25 @@ def _check_owner(goal: Goal, wallet: WalletTypeInfo) -> None:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail="Not your goal")
 
 
-@zapgoals_api_router.get("/goals", response_model=list[Goal])
+@zapgoals_api_router.get(
+    "/goals",
+    response_model=list[Goal],
+    summary="List wallet goals",
+    description="Returns ZapGoals owned by the wallet identified by an invoice key.",
+)
 async def api_list_goals(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ) -> list[Goal]:
     return await get_goals(wallet.wallet.id)
 
 
-@zapgoals_api_router.post("/goals", response_model=Goal, status_code=HTTPStatus.CREATED)
+@zapgoals_api_router.post(
+    "/goals",
+    response_model=Goal,
+    status_code=HTTPStatus.CREATED,
+    summary="Create a goal",
+    description="Creates a ZapGoal for the wallet identified by an admin key.",
+)
 async def api_create_goal(
     data: GoalData, wallet: WalletTypeInfo = Depends(require_admin_key)
 ) -> Goal:
@@ -69,7 +80,12 @@ async def api_create_goal(
     return await create_goal(wallet.wallet.id, data)
 
 
-@zapgoals_api_router.put("/goals/{goal_id}", response_model=Goal)
+@zapgoals_api_router.put(
+    "/goals/{goal_id}",
+    response_model=Goal,
+    summary="Update a goal",
+    description="Updates an owned goal without changing its wallet or settled total.",
+)
 async def api_update_goal(
     goal_id: str,
     data: GoalData,
@@ -89,7 +105,15 @@ async def api_update_goal(
     return await update_goal(goal, data)
 
 
-@zapgoals_api_router.delete("/goals/{goal_id}", status_code=HTTPStatus.NO_CONTENT)
+@zapgoals_api_router.delete(
+    "/goals/{goal_id}",
+    status_code=HTTPStatus.NO_CONTENT,
+    summary="Delete a goal",
+    description=(
+        "Deletes an owned goal and its extension tracking rows. "
+        "LNbits wallet payment history is retained."
+    ),
+)
 async def api_delete_goal(
     goal_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
 ) -> None:
@@ -100,15 +124,36 @@ async def api_delete_goal(
     await delete_goal_and_contributions(goal.id)
 
 
-@zapgoals_api_router.get("/goals/{goal_id}/public", response_model=PublicGoal)
-async def api_public_goal(goal_id: str, request: Request) -> PublicGoal:
+@zapgoals_api_router.get(
+    "/goals/{goal_id}/public",
+    response_model=PublicGoal,
+    summary="Get public goal state",
+    description=(
+        "Returns public presentation settings, settled satoshi total, target, "
+        "deadline, and payment identifiers for alternate frontends."
+    ),
+)
+async def api_public_goal(
+    goal_id: str, request: Request, response: Response
+) -> PublicGoal:
     goal = await get_goal(goal_id)
     if not goal:
         raise _not_found()
+    response.headers["Cache-Control"] = "no-store"
     return public_goal(goal, request)
 
 
-@zapgoals_api_router.post("/goals/{goal_id}/invoice", response_model=InvoiceResponse)
+@zapgoals_api_router.post(
+    "/goals/{goal_id}/invoice",
+    response_model=InvoiceResponse,
+    status_code=HTTPStatus.CREATED,
+    summary="Create a contribution invoice",
+    description=(
+        "Creates a 10-minute BOLT11 invoice for a public goal. Amount is in "
+        "satoshis; the optional comment is limited to 280 characters. Expired "
+        "unpaid tracking rows are cleaned up before issuance."
+    ),
+)
 async def api_goal_invoice(goal_id: str, data: InvoiceRequest) -> InvoiceResponse:
     goal = await get_goal(goal_id)
     if not goal:
@@ -123,7 +168,14 @@ async def api_goal_invoice(goal_id: str, data: InvoiceRequest) -> InvoiceRespons
 
 
 @zapgoals_api_router.get(
-    "/lnurl/{goal_id}", response_model=LnurlPayResponse, name="zapgoals_lnurl"
+    "/lnurl/{goal_id}",
+    response_model=LnurlPayResponse,
+    name="zapgoals_lnurl",
+    summary="Get an LNURL-pay request",
+    description=(
+        "Returns public LNURL-pay metadata for a goal. Sendable amounts are "
+        "expressed in millisatoshis by the LNURL protocol."
+    ),
 )
 async def api_lnurl(goal_id: str, request: Request) -> LnurlPayResponse:
     goal = await get_goal(goal_id)
@@ -136,14 +188,26 @@ async def api_lnurl(goal_id: str, request: Request) -> LnurlPayResponse:
     "/lnurl/cb/{goal_id}",
     response_model=LnurlPayActionResponse | LnurlErrorResponse,
     name="zapgoals_lnurl_callback",
+    summary="Request an LNURL-pay invoice",
+    description=(
+        "Creates a goal invoice from an LNURL-pay callback. The amount query "
+        "parameter is in millisatoshis. A valid NIP-57 kind 9734 event may be "
+        "provided through the nostr parameter."
+    ),
 )
 async def api_lnurl_callback(
     goal_id: str,
     request: Request,
-    amount: int = Query(...),
-    comment: str | None = Query(None),
-    nostr: str | None = Query(None),
-    lnurl: str | None = Query(None),
+    amount: int = Query(..., description="Invoice amount in millisatoshis."),
+    comment: str | None = Query(
+        None, description="Optional LNURL-pay comment, up to 280 characters."
+    ),
+    nostr: str | None = Query(
+        None, description="Optional JSON-encoded NIP-57 kind 9734 zap request."
+    ),
+    lnurl: str | None = Query(
+        None, description="Optional bech32 LNURL associated with the zap request."
+    ),
 ):
     goal = await get_goal(goal_id)
     if not goal:
@@ -192,7 +256,13 @@ async def api_lnurl_callback(
 
 
 @zapgoals_api_router.get(
-    "/well-known/{username}", response_model=LnurlPayResponse | LnurlErrorResponse
+    "/well-known/{username}",
+    response_model=LnurlPayResponse | LnurlErrorResponse,
+    summary="Resolve a goal Lightning Address",
+    description=(
+        "Internal target for /.well-known/lnurlp/{username}. It is active only "
+        "when ZapGoals owns the LNbits Lightning Address redirect."
+    ),
 )
 async def api_well_known(username: str, request: Request):
     normalized = username.strip().lower()

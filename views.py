@@ -9,8 +9,9 @@ zapgoals_generic_router.add_api_route(
     methods=["GET"],
     endpoint=index,
     dependencies=[Depends(check_account_id_exists)],
+    include_in_schema=False,
 )
 
 zapgoals_generic_router.add_api_route(
-    "/{goal_id}", methods=["GET"], endpoint=index_public
+    "/{goal_id}", methods=["GET"], endpoint=index_public, include_in_schema=False
 )

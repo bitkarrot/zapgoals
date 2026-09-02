@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from lnbits.core.models import WalletTypeInfo
 
 from .. import views_api
-from ..models import Goal
+from ..models import Goal, WalletMode
 
 
 def partially_funded_goal() -> Goal:
@@ -23,6 +23,8 @@ def partially_funded_goal() -> Goal:
         goal_amount=1000,
         current_amount=250,
         target_date=now + timedelta(days=30),
+        wallet_mode=WalletMode.vanilla,
+        nostr_pubkey=None,
         lightning_address_username=None,
         created_at=now,
         updated_at=now,

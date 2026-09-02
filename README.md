@@ -51,7 +51,7 @@ Routes are mounted below the extension's `/zapgoals` prefix:
 - `GET /.well-known/lnurlp/{username}` resolves an optional Lightning Address when the instance routes Lightning Addresses to this extension.
 - `/api/v1/ws/{goal_id}` is the LNbits core WebSocket used as a realtime invalidation signal; clients should re-fetch the public endpoint after a message.
 
-Authenticated goal management routes are listed in the running instance's OpenAPI schema.
+Authenticated goal management routes are listed in the running instance's OpenAPI schema. Goal and direct invoice amounts use satoshis; LNURL callback amounts use millisatoshis; target dates are normalized to UTC. Public invoices expire after 10 minutes, expired unpaid tracking rows are removed during subsequent invoice creation, and requests remain subject to the LNbits server-wide rate limit.
 
 ## NIP-57
 

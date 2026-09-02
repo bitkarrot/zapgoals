@@ -19,17 +19,33 @@ class GoalData(BaseModel):
     title: str = Field(..., min_length=1, max_length=120)
     description_above: str = Field("", max_length=2000)
     description_below: str = Field("", max_length=2000)
-    goal_amount: int = Field(..., gt=0, le=MAX_SATS)
-    target_date: datetime
-    suggested_amounts: list[int] = Field(default_factory=lambda: [21, 100, 500, 1000])
-    wallet_mode: WalletMode = WalletMode.vanilla
+    goal_amount: int = Field(
+        ..., gt=0, le=MAX_SATS, description="Funding target in satoshis."
+    )
+    target_date: datetime = Field(
+        ..., description="Timezone-aware target timestamp, normalized to UTC."
+    )
+    suggested_amounts: list[int] = Field(
+        default_factory=lambda: [21, 100, 500, 1000],
+        description="One to four unique suggested contribution amounts in satoshis.",
+    )
+    wallet_mode: WalletMode = Field(
+        WalletMode.vanilla,
+        description="Payment UI: vanilla BOLT11 invoice or Bitcoin Connect.",
+    )
     background_color: str = "#FFFFFF"
     text_color: str = "#111111"
     progress_color: str = "#2E7D32"
     remainder_color: str = "#E0E0E0"
     font_family: str = "sans-serif"
-    nostr_pubkey: str | None = None
-    lightning_address_username: str | None = Field(None, max_length=64)
+    nostr_pubkey: str | None = Field(
+        None, description="Recipient Nostr public key as 64 lowercase hex characters."
+    )
+    lightning_address_username: str | None = Field(
+        None,
+        max_length=64,
+        description="Optional unique Lightning Address username.",
+    )
 
     @validator("title", "description_above", "description_below")
     def plain_text(cls, value):
@@ -99,10 +115,14 @@ class PublicGoal(BaseModel):
     text: dict
     description_above: str
     description_below: str
-    goal_amount: int
-    current_amount: int
-    target_date: datetime
-    suggested_amounts: list[int]
+    goal_amount: int = Field(..., description="Funding target in satoshis.")
+    current_amount: int = Field(
+        ..., description="Total settled contributions in satoshis."
+    )
+    target_date: datetime = Field(..., description="Goal target timestamp in UTC.")
+    suggested_amounts: list[int] = Field(
+        ..., description="Suggested contribution amounts in satoshis."
+    )
     colors: dict
     background_color: str
     text_color: str
@@ -136,8 +156,12 @@ class Contribution(BaseModel):
 
 
 class InvoiceRequest(BaseModel):
-    amount: int = Field(..., ge=1, le=MAX_SATS)
-    comment: str | None = Field(None, max_length=280)
+    amount: int = Field(
+        ..., ge=1, le=MAX_SATS, description="Contribution amount in satoshis."
+    )
+    comment: str | None = Field(
+        None, max_length=280, description="Optional contribution comment."
+    )
 
     @validator("comment")
     def plain_comment(cls, value):
@@ -149,9 +173,9 @@ class InvoiceRequest(BaseModel):
 
 
 class InvoiceResponse(BaseModel):
-    payment_hash: str
-    payment_request: str
-    amount: int
+    payment_hash: str = Field(..., description="Hex-encoded Lightning payment hash.")
+    payment_request: str = Field(..., description="BOLT11 Lightning invoice.")
+    amount: int = Field(..., description="Invoice amount in satoshis.")
 
 
 class ExtensionSetting(BaseModel):

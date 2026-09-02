@@ -71,8 +71,12 @@ def test_create_goal_invoice_tags_and_records_contribution(monkeypatch):
     )
     create_payment = AsyncMock(return_value=payment)
     create_contribution = AsyncMock()
+    purge_contributions = AsyncMock()
     monkeypatch.setattr(services, "create_payment_request", create_payment)
     monkeypatch.setattr(services, "create_contribution", create_contribution)
+    monkeypatch.setattr(
+        services, "purge_expired_unpaid_contributions", purge_contributions
+    )
 
     result = asyncio.run(
         services.create_goal_invoice(
@@ -84,6 +88,10 @@ def test_create_goal_invoice_tags_and_records_contribution(monkeypatch):
     assert payment_call is not None
     invoice_data = payment_call.args[1]
     assert invoice_data.amount == 21
+    assert invoice_data.expiry == services.INVOICE_EXPIRY_SECONDS
+    purge_contributions.assert_awaited_once_with(
+        "goal123", services.INVOICE_EXPIRY_SECONDS
+    )
     assert invoice_data.extra == {
         "tag": "zapgoals",
         "goal_id": "goal123",
@@ -153,6 +161,8 @@ def test_goal_data_accepts_long_time_periods():
         description_below="",
         goal_amount=100,
         target_date=datetime.now(timezone.utc) + timedelta(days=3650),
+        wallet_mode=WalletMode.vanilla,
+        nostr_pubkey=None,
         lightning_address_username=None,
     )
     assert goal.target_date.tzinfo is not None

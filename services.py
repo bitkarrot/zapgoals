@@ -25,6 +25,7 @@ from .crud import (
     create_contribution,
     create_extension_setting,
     get_extension_setting,
+    purge_expired_unpaid_contributions,
     settle_contribution,
 )
 from .models import MAX_SATS, PUBKEY_RE, Goal, InvoiceResponse, PublicGoal
@@ -33,6 +34,7 @@ from .settings import lightning_address_enabled
 MIN_SENDABLE_MSAT = 1000
 MAX_SENDABLE_MSAT = MAX_SATS * 1000
 COMMENT_ALLOWED = 280
+INVOICE_EXPIRY_SECONDS = 600
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -146,11 +148,13 @@ async def create_goal_invoice(
         "source": source,
     }
     payment_extra.update(extra or {})
+    await purge_expired_unpaid_contributions(goal.id, INVOICE_EXPIRY_SECONDS)
     invoice_data = CreateInvoice(
         out=False,
         amount=amount,
         unit="sat",
         memo=goal.title,
+        expiry=INVOICE_EXPIRY_SECONDS,
         extra=payment_extra,
         unhashed_description=(
             unhashed_description.hex() if unhashed_description is not None else None
