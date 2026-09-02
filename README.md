@@ -1,3 +1,5 @@
+# ZapGoals
+
 <img width="160" height="160" alt="ZapGoals" align="right" src="https://github.com/user-attachments/assets/e4202ca3-f777-4d89-9384-a9cdd9c1d3c5" /><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
@@ -16,8 +18,6 @@
   <path d="M142 62 89 139h35l-12 56 56-85h-36z" fill="url(#bolt)" stroke="#fff7c2" stroke-width="4" stroke-linejoin="round"/>
   <circle cx="201" cy="157" r="9" fill="#2dd4bf" stroke="#d5fffa" stroke-width="4"/>
 </svg>
-
-# ZapGoals
 
 ZapGoals is a standalone extension for LNbits 1.5 or newer. It creates public Lightning funding goals with customizable presentation, LNURL-pay support, optional Lightning Addresses, Nostr zap handling, and realtime progress updates.
 
