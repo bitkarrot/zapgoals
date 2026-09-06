@@ -150,7 +150,7 @@ The embedded card displays the same content as the public page: goal title, desc
 - It communicates with the LNbits public API (`GET /goals/{id}/public`, `POST /goals/{id}/invoice`) and WebSockets (`/api/v1/ws/{goal_id}`) for live updates.
 - The iframe auto-resizes to fit the card content via `postMessage`.
 - CORS is permissive on LNbits by default, so cross-origin embedding works without additional configuration.
-- Bitcoin Connect is loaded on demand from `esm.sh` when the goal's wallet mode includes it.
+- QR code invoices always work in the embed. Bitcoin Connect is attempted when the goal's wallet mode includes it, but may fail in cross-origin iframes because browsers can block `localStorage` access (used by Bitcoin Connect to persist wallet connections). When this happens, the embed automatically falls back to the QR-only invoice dialog and shows an "Open full page" link so users can access wallet payments in a first-party context.
 
 ## NIP-57
 

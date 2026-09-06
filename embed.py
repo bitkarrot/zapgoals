@@ -295,21 +295,42 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
       watchInvoice(data.payment_hash);
 
       if(goal.wallet_mode === 'all'){
-        import('https://esm.sh/@getalby/bitcoin-connect@3.12.3').then(function(bc){
-          bc.init({appName:'ZapGoals', showBalance:false, persistConnection:true});
-          bc.launchPaymentModal({
-            invoice: data.payment_request,
-            paymentMethods: 'all',
-            onPaid: function(){ paymentComplete(); },
-            onCancelled: function(){ showInvoiceDialog(); }
-          });
-        }).catch(function(){ showInvoiceDialog(); });
+        tryBitcoinConnect(data.payment_request);
       } else {
         showInvoiceDialog();
       }
     }).catch(function(e){
       alert('Could not create invoice: ' + e.message);
     });
+  }
+
+  function tryBitcoinConnect(paymentRequest){
+    // Bitcoin Connect uses localStorage to persist wallet connections.
+    // In a cross-origin iframe, browsers may block localStorage access
+    // (Safari by default, Chrome with third-party cookie blocking).
+    // If init() or launchPaymentModal() throws, fall back to QR-only.
+    try {
+      import('https://esm.sh/@getalby/bitcoin-connect@3.12.3').then(function(bc){
+        try {
+          bc.init({appName:'ZapGoals', showBalance:false, persistConnection:true});
+          bc.launchPaymentModal({
+            invoice: paymentRequest,
+            paymentMethods: 'all',
+            onPaid: function(){ paymentComplete(); },
+            onCancelled: function(){ showInvoiceDialog(); }
+          });
+        } catch(e) {
+          console.warn('Bitcoin Connect failed in iframe, falling back to QR:', e);
+          showInvoiceDialog();
+        }
+      }).catch(function(e){
+        console.warn('Bitcoin Connect import failed, falling back to QR:', e);
+        showInvoiceDialog();
+      });
+    } catch(e) {
+      console.warn('Bitcoin Connect unavailable, falling back to QR:', e);
+      showInvoiceDialog();
+    }
   }
 
   function showInvoiceDialog(){
@@ -319,6 +340,11 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     html += '<div class="zg-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=LIGHTNING:'+encodeURIComponent(invoice.payment_request.toUpperCase())+'" alt="QR code"></div>';
     html += '<div class="zg-invoice-box"><textarea class="zg-invoice-text" readonly rows="3">'+escapeHtml(invoice.payment_request)+'</textarea></div>';
     html += '<div style="text-align:center;margin-top:.75rem"><button class="zg-copy-btn" onclick="window.__zgCopy(\\''+invoice.payment_request+'\\')">📋 Copy invoice</button></div>';
+    if(goal.wallet_mode === 'all'){
+      html += '<div style="text-align:center;margin-top:.5rem;font-size:.85rem;color:#666">'
+        + 'Wallet payment unavailable in embed? '
+        + '<a href="'+ORIGIN+'/zapgoals/'+GOAL_ID+'" target="_blank" rel="noopener" style="color:#f59e0b">Open full page</a></div>';
+    }
 
     dialog.innerHTML = html;
     overlay.classList.add('show');
