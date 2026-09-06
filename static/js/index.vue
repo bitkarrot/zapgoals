@@ -261,7 +261,10 @@
     </div>
 
     <q-dialog v-model="formDialog.show" position="top">
-      <q-card class="q-pa-md lnbits__dialog-card" style="max-width: 760px">
+      <q-card
+        class="q-pa-md lnbits__dialog-card"
+        style="max-width: 1024px; width: 100%"
+      >
         <q-card-section class="row items-center q-pb-none">
           <div
             class="text-h6"
@@ -338,18 +341,18 @@
             </div>
             <div>
               <div
-                class="text-subtitle2"
+                class="text-h5 q-mb-xs"
                 v-text="$t('zapgoals.suggested_amounts')"
               ></div>
               <div
-                class="text-caption text-grey-6 q-mb-sm"
+                class="text-body1 text-grey-6 q-mb-md"
                 v-text="$t('zapgoals.suggested_amounts_hint')"
               ></div>
-              <div class="row q-col-gutter-sm">
+              <div class="row q-col-gutter-md">
                 <div
                   v-for="index in 4"
                   :key="`suggested-${index}`"
-                  class="col-6 col-sm-3"
+                  class="col-12 col-sm-6 col-md-3"
                 >
                   <q-input
                     filled
@@ -367,58 +370,49 @@
                 </div>
               </div>
             </div>
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-sm-4">
-                <q-select
-                  filled
-                  emit-value
-                  map-options
-                  v-model="formDialog.data.wallet_mode"
-                  :options="modeOptions"
-                  :label="$t('zapgoals.payment_mode')"
-                ></q-select>
-              </div>
-              <div class="col-12 col-sm-4">
-                <q-select
-                  filled
-                  emit-value
-                  map-options
-                  v-model="formDialog.data.font_name"
-                  :options="fontOptions"
-                  :label="$t('zapgoals.font')"
-                ></q-select>
-              </div>
-              <div class="col-12 col-sm-4">
-                <q-select
-                  filled
-                  emit-value
-                  map-options
-                  v-model="formDialog.data.font_weight"
-                  :options="fontWeightOptions"
-                  :label="$t('zapgoals.font_weight')"
-                ></q-select>
-              </div>
-            </div>
-            <q-banner rounded class="bg-blue-1 text-dark">
-              <q-icon name="qr_code" class="q-mr-sm"></q-icon>
-              <span v-text="$t('zapgoals.vanilla_always')"></span>
-            </q-banner>
-            <q-input
-              filled
-              v-model.trim="formDialog.data.nostr_pubkey"
-              :label="$t('zapgoals.nostr_pubkey')"
-              maxlength="64"
-              :hint="$t('zapgoals.nostr_hint')"
-              :rules="[nostrRule]"
-            ></q-input>
-            <q-input
-              filled
-              v-model.trim="formDialog.data.lightning_address_username"
-              :label="$t('zapgoals.lightning_username')"
-              maxlength="64"
-              :hint="$t('zapgoals.username_hint')"
-              :rules="[usernameRule]"
-            ></q-input>
+
+            <q-separator class="q-my-lg"></q-separator>
+
+            <section>
+              <div
+                class="text-h5 q-mb-xs"
+                v-text="$t('zapgoals.payment_settings')"
+              ></div>
+              <div
+                class="text-body1 text-grey-6 q-mb-md"
+                v-text="$t('zapgoals.payment_settings_hint')"
+              ></div>
+              <q-select
+                filled
+                emit-value
+                map-options
+                v-model="formDialog.data.wallet_mode"
+                :options="modeOptions"
+                :label="$t('zapgoals.payment_mode')"
+              ></q-select>
+              <q-banner rounded class="bg-blue-1 text-dark q-mt-md">
+                <q-icon name="qr_code" class="q-mr-sm"></q-icon>
+                <span v-text="$t('zapgoals.vanilla_always')"></span>
+              </q-banner>
+              <q-input
+                filled
+                class="q-mt-md"
+                v-model.trim="formDialog.data.nostr_pubkey"
+                :label="$t('zapgoals.nostr_pubkey')"
+                maxlength="64"
+                :hint="$t('zapgoals.nostr_hint')"
+                :rules="[nostrRule]"
+              ></q-input>
+              <q-input
+                filled
+                v-model.trim="formDialog.data.lightning_address_username"
+                :label="$t('zapgoals.lightning_username')"
+                maxlength="64"
+                :hint="$t('zapgoals.username_hint')"
+                :rules="[usernameRule]"
+              ></q-input>
+            </section>
+
             <q-input
               filled
               type="textarea"
@@ -430,46 +424,78 @@
               :rules="[descriptionRule]"
             ></q-input>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-6 col-sm-3">
-                <q-input
-                  filled
-                  type="color"
-                  v-model="formDialog.data.background_color"
-                  :label="$t('zapgoals.background')"
-                  stack-label
-                ></q-input>
+            <q-separator class="q-my-lg"></q-separator>
+
+            <section>
+              <div class="text-h5 q-mb-xs" v-text="$t('zapgoals.design')"></div>
+              <div
+                class="text-body1 text-grey-6 q-mb-md"
+                v-text="$t('zapgoals.design_hint')"
+              ></div>
+              <div class="row q-col-gutter-md">
+                <div class="col-6 col-sm-3">
+                  <q-input
+                    filled
+                    type="color"
+                    v-model="formDialog.data.background_color"
+                    :label="$t('zapgoals.background')"
+                    stack-label
+                  ></q-input>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <q-input
+                    filled
+                    type="color"
+                    v-model="formDialog.data.text_color"
+                    :label="$t('zapgoals.text')"
+                    stack-label
+                  ></q-input>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <q-input
+                    filled
+                    type="color"
+                    v-model="formDialog.data.progress_color"
+                    :label="$t('zapgoals.progress_color')"
+                    stack-label
+                  ></q-input>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <q-input
+                    filled
+                    type="color"
+                    v-model="formDialog.data.remainder_color"
+                    :label="$t('zapgoals.remainder_color')"
+                    stack-label
+                  ></q-input>
+                </div>
               </div>
-              <div class="col-6 col-sm-3">
-                <q-input
-                  filled
-                  type="color"
-                  v-model="formDialog.data.text_color"
-                  :label="$t('zapgoals.text')"
-                  stack-label
-                ></q-input>
+              <div class="row q-col-gutter-md q-mt-md">
+                <div class="col-12 col-sm-8">
+                  <q-select
+                    filled
+                    emit-value
+                    map-options
+                    v-model="formDialog.data.font_name"
+                    :options="fontOptions"
+                    :label="$t('zapgoals.font')"
+                  ></q-select>
+                </div>
+                <div class="col-12 col-sm-4">
+                  <q-select
+                    filled
+                    emit-value
+                    map-options
+                    v-model="formDialog.data.font_weight"
+                    :options="fontWeightOptions"
+                    :label="$t('zapgoals.font_weight')"
+                  ></q-select>
+                </div>
               </div>
-              <div class="col-6 col-sm-3">
-                <q-input
-                  filled
-                  type="color"
-                  v-model="formDialog.data.progress_color"
-                  :label="$t('zapgoals.progress_color')"
-                  stack-label
-                ></q-input>
-              </div>
-              <div class="col-6 col-sm-3">
-                <q-input
-                  filled
-                  type="color"
-                  v-model="formDialog.data.remainder_color"
-                  :label="$t('zapgoals.remainder_color')"
-                  stack-label
-                ></q-input>
-              </div>
-            </div>
+            </section>
+
             <div
-              class="text-subtitle2"
+              class="text-h6 q-mt-md q-mb-sm"
               v-text="$t('zapgoals.live_preview')"
             ></div>
             <div
