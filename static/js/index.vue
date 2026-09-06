@@ -93,6 +93,16 @@
                 ><q-tooltip v-text="$t('zapgoals.open_link')"></q-tooltip
               ></q-btn>
               <q-btn
+                flat
+                round
+                dense
+                color="secondary"
+                icon="code"
+                :aria-label="$t('zapgoals.embed')"
+                @click="openEmbedDialog(props.row)"
+                ><q-tooltip v-text="$t('zapgoals.embed')"></q-tooltip
+              ></q-btn>
+              <q-btn
                 v-if="props.row.recurring"
                 flat
                 round
@@ -787,6 +797,41 @@
             <q-icon name="history" size="2rem"></q-icon>
             <div class="q-mt-sm" v-text="$t('zapgoals.no_periods')"></div>
           </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="embedDialog.show">
+      <q-card class="lnbits__dialog-card" style="max-width: 600px; width: 100%">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6" v-text="$t('zapgoals.embed')"></div>
+          <q-space></q-space>
+          <q-btn v-close-popup flat round dense icon="close"></q-btn>
+        </q-card-section>
+        <q-card-section>
+          <div
+            class="text-body2 text-grey-7 q-mb-md"
+            v-text="$t('zapgoals.embed_hint')"
+          ></div>
+          <q-input
+            filled
+            readonly
+            type="textarea"
+            rows="6"
+            :model-value="embedDialog.snippet"
+            class="q-mb-md"
+          >
+            <template v-slot:append>
+              <q-btn
+                flat
+                round
+                dense
+                icon="content_copy"
+                :aria-label="$t('zapgoals.copy_snippet')"
+                @click="copyEmbedSnippet"
+              ></q-btn>
+            </template>
+          </q-input>
         </q-card-section>
       </q-card>
     </q-dialog>

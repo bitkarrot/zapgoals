@@ -49,7 +49,8 @@ window.PageZapGoals = {
       periodsDialog: {show: false, loading: false, goal: null, periods: []},
       sweeping: false,
       schedulerStatus: null,
-      settingUpScheduler: false
+      settingUpScheduler: false,
+      embedDialog: {show: false, snippet: ''}
     }
   },
   computed: {
@@ -487,6 +488,19 @@ window.PageZapGoals = {
       } finally {
         this.periodsDialog.loading = false
       }
+    },
+    openEmbedDialog(goal) {
+      const url = `${window.location.origin}/zapgoals/${goal.id}/embed`
+      const snippet = `<iframe src="${url}" style="width:100%;max-width:500px;height:600px;border:0;border-radius:1rem;" loading="lazy" title="ZapGoal"></iframe>`
+      this.embedDialog = {show: true, snippet}
+    },
+    copyEmbedSnippet() {
+      this.utils.copyText(this.embedDialog.snippet)
+      Quasar.Notify.create({
+        type: 'positive',
+        message: this.$t('zapgoals.snippet_copied'),
+        icon: null
+      })
     },
     periodColumns() {
       return [

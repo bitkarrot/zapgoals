@@ -117,6 +117,41 @@ Sweeps can also be triggered manually per goal from the ZapGoals admin panel (th
 
 Each completed period is recorded in a ledger accessible via `GET /zapgoals/api/v1/goals/{goal_id}/periods` and in the admin panel (the history button). Each row records the period index, start/end dates, total zapped, amount moved to the target wallet, rollover, and sweep timestamp.
 
+## Embedding a goal on an external website
+
+Any ZapGoal can be embedded on an external website via an iframe. The embed page is a standalone HTML page (no LNbits login or SPA shell required) that renders the full goal card with live progress, countdown, zap button, invoice generation, QR code, and Bitcoin Connect support.
+
+### Getting the embed snippet
+
+1. Open the ZapGoals admin panel.
+2. Click the **Embed** button (code icon) on any goal row.
+3. Copy the iframe snippet from the dialog.
+
+### Embed snippet format
+
+```html
+<iframe
+  src="https://your-lnbits.example.com/zapgoals/{goal_id}/embed"
+  style="width:100%;max-width:500px;height:600px;border:0;border-radius:1rem;"
+  loading="lazy"
+  title="ZapGoal"
+></iframe>
+```
+
+Replace `your-lnbits.example.com` with your LNbits instance URL and `{goal_id}` with the goal ID.
+
+### What the embed shows
+
+The embedded card displays the same content as the public page: goal title, descriptions, progress bar with live updates, current/goal amounts, countdown timer, recurring period badge (if applicable), zap button with suggested amounts, custom amount input, BOLT11 invoice QR code, and Bitcoin Connect (if enabled on the goal). Lightning Address and Nostr badge are also shown when configured.
+
+### Technical notes
+
+- The embed page is served at `/zapgoals/{goal_id}/embed` and requires no authentication.
+- It communicates with the LNbits public API (`GET /goals/{id}/public`, `POST /goals/{id}/invoice`) and WebSockets (`/api/v1/ws/{goal_id}`) for live updates.
+- The iframe auto-resizes to fit the card content via `postMessage`.
+- CORS is permissive on LNbits by default, so cross-origin embedding works without additional configuration.
+- Bitcoin Connect is loaded on demand from `esm.sh` when the goal's wallet mode includes it.
+
 ## NIP-57
 
 An LNURL callback may receive a NIP-57 `nostr` zap request. ZapGoals validates supported zap request data and binds it to the generated invoice. When the tagged invoice settles, the extension can process the contribution as a Nostr-aware zap. Ordinary LNURL-pay clients remain supported; configuring a Nostr public key does not turn unrelated wallet payments into zaps.

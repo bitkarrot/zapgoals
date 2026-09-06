@@ -153,6 +153,12 @@ window.i18n.global.mergeLocaleMessage('en', {
     setup_scheduler_failed: 'Could not create scheduler job: {detail}',
     target_date_recurring: 'First period end date',
     target_date_recurring_hint:
-      'When this period ends, sats are swept and the goal advances to the next period.'
+      'When this period ends, sats are swept and the goal advances to the next period.',
+    embed: 'Embed',
+    embed_hint:
+      'Copy this snippet and paste it into your website HTML to embed the goal card.',
+    embed_snippet: 'Embed snippet',
+    copy_snippet: 'Copy snippet',
+    snippet_copied: 'Snippet copied to clipboard.'
   }
 })
