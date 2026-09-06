@@ -726,6 +726,7 @@
             >
               <div
                 class="text-subtitle1 q-mb-sm"
+                :style="{fontWeight: previewStyle.fontWeight}"
                 v-text="formDialog.data.title || $t('zapgoals.preview_title')"
               ></div>
               <div
