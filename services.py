@@ -75,17 +75,25 @@ def next_period_end(
     """Compute the next period boundary in UTC.
 
     For day/week units the boundary advances by interval days/weeks.
-    For month units it advances by interval months; when day_of_month is
-    given the result is clamped to the last day of the target month.
+    For month, quarter, half_year and year units it advances by the
+    equivalent number of months; when day_of_month is given (month only)
+    the result is clamped to the last day of the target month.
     """
     end = _as_utc(current_end)
     if unit == "day":
         return end + timedelta(days=interval)
     if unit == "week":
         return end + timedelta(weeks=interval)
-    if unit == "month":
+    months_per_unit = {
+        "month": 1,
+        "quarter": 3,
+        "half_year": 6,
+        "year": 12,
+    }
+    if unit in months_per_unit:
+        total_months = months_per_unit[unit] * interval
         year = end.year
-        month = end.month + interval
+        month = end.month + total_months
         while month > 12:
             month -= 12
             year += 1

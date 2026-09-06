@@ -33,7 +33,10 @@ window.PageZapGoals = {
       recurrenceUnitOptions: [
         {label: 'Daily', value: 'day'},
         {label: 'Weekly', value: 'week'},
-        {label: 'Monthly', value: 'month'}
+        {label: 'Monthly', value: 'month'},
+        {label: 'Quarterly', value: 'quarter'},
+        {label: 'Semi-annual', value: 'half_year'},
+        {label: 'Annual', value: 'year'}
       ],
       rolloverModeOptions: [
         {label: 'Count excess as progress', value: 'counts_as_progress'},

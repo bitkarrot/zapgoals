@@ -10,7 +10,7 @@ COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 USERNAME_RE = re.compile(r"^[a-z0-9._-]+$")
 PUBKEY_RE = re.compile(r"^[0-9a-f]{64}$")
 
-RecurrenceUnit = Literal["day", "week", "month"]
+RecurrenceUnit = Literal["day", "week", "month", "quarter", "half_year", "year"]
 RolloverMode = Literal["counts_as_progress", "reset_to_zero"]
 SweepMode = Literal["target_amount", "entire_amount"]
 FONT_NAMES = {

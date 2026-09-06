@@ -221,6 +221,41 @@ def test_next_period_end_unknown_unit_raises():
         services.next_period_end(datetime(2026, 1, 1, tzinfo=timezone.utc), "hour", 1)
 
 
+def test_next_period_end_quarter():
+    end = datetime(2026, 1, 15, 0, 0, tzinfo=timezone.utc)
+    assert services.next_period_end(end, "quarter", 1) == datetime(
+        2026, 4, 15, 0, 0, tzinfo=timezone.utc
+    )
+
+
+def test_next_period_end_quarter_interval_2():
+    end = datetime(2026, 1, 15, 0, 0, tzinfo=timezone.utc)
+    assert services.next_period_end(end, "quarter", 2) == datetime(
+        2026, 7, 15, 0, 0, tzinfo=timezone.utc
+    )
+
+
+def test_next_period_end_half_year():
+    end = datetime(2026, 1, 15, 0, 0, tzinfo=timezone.utc)
+    assert services.next_period_end(end, "half_year", 1) == datetime(
+        2026, 7, 15, 0, 0, tzinfo=timezone.utc
+    )
+
+
+def test_next_period_end_year():
+    end = datetime(2026, 6, 15, 0, 0, tzinfo=timezone.utc)
+    assert services.next_period_end(end, "year", 1) == datetime(
+        2027, 6, 15, 0, 0, tzinfo=timezone.utc
+    )
+
+
+def test_next_period_end_year_wraps_leap_day():
+    end = datetime(2024, 2, 29, 0, 0, tzinfo=timezone.utc)
+    assert services.next_period_end(end, "year", 1) == datetime(
+        2025, 2, 28, 0, 0, tzinfo=timezone.utc
+    )
+
+
 def test_compute_sweep_over_target_counts_rollover():
     move, rollover, new_current = services.compute_sweep(
         zapped=10200,
