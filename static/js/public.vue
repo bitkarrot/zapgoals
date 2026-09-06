@@ -21,11 +21,13 @@
         <q-card-section class="q-pa-lg q-pa-sm-xl">
           <h1
             class="zapgoals-title text-center q-mt-none q-mb-lg"
+            :style="{fontWeight: cardStyle.fontWeight}"
             v-text="goal.title"
           ></h1>
           <p
             v-if="goal.description_above"
             class="zapgoals-description q-mb-lg"
+            :style="{fontWeight: cardStyle.fontWeight}"
             v-text="goal.description_above"
           ></p>
 
@@ -41,7 +43,10 @@
             <div class="zapgoals-progress-fill" :style="fillStyle"></div>
             <span class="zapgoals-percent" v-text="percentLabel"></span>
           </div>
-          <div class="row justify-between q-mt-sm text-weight-medium">
+          <div
+            class="row justify-between q-mt-sm"
+            :style="{fontWeight: cardStyle.fontWeight}"
+          >
             <span
               v-text="
                 $t('zapgoals.current_public', {
@@ -60,7 +65,11 @@
 
           <div class="zapgoals-target text-center q-my-lg">
             <q-icon name="event" aria-hidden="true"></q-icon>
-            <span class="q-ml-xs" v-text="targetLabel"></span>
+            <span
+              class="q-ml-xs"
+              :style="{fontWeight: cardStyle.fontWeight}"
+              v-text="targetLabel"
+            ></span>
             <div class="text-weight-bold q-mt-xs" v-text="countdownLabel"></div>
           </div>
 
@@ -82,6 +91,7 @@
           <p
             v-if="goal.description_below"
             class="zapgoals-description q-mb-lg"
+            :style="{fontWeight: cardStyle.fontWeight}"
             v-text="goal.description_below"
           ></p>
 
