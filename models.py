@@ -1,6 +1,7 @@
 import re
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel, Field, validator
 
@@ -8,6 +9,10 @@ MAX_SATS = 2_100_000_000
 COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 USERNAME_RE = re.compile(r"^[a-z0-9._-]+$")
 PUBKEY_RE = re.compile(r"^[0-9a-f]{64}$")
+
+RecurrenceUnit = Literal["day", "week", "month"]
+RolloverMode = Literal["counts_as_progress", "reset_to_zero"]
+SweepMode = Literal["target_amount", "entire_amount"]
 FONT_NAMES = {
     "sans-serif",
     "serif",
@@ -61,6 +66,47 @@ class GoalData(BaseModel):
         None,
         max_length=64,
         description="Optional unique Lightning Address username.",
+    )
+    recurring: bool = Field(
+        False,
+        description="When true, the goal resets on a schedule and sweeps "
+        "settled sats to a target wallet at each period end.",
+    )
+    recurrence_unit: RecurrenceUnit | None = Field(
+        None, description="Recurrence period unit. Required when recurring."
+    )
+    recurrence_interval: int = Field(
+        1,
+        gt=0,
+        le=365,
+        description="Recurrence period length in recurrence_unit. "
+        "Defaults to 1 (e.g. every 1 month).",
+    )
+    recurrence_day_of_month: int | None = Field(
+        None,
+        ge=1,
+        le=31,
+        description="For monthly recurrence, the day of month the period "
+        "ends on. Clamped to the last day of short months. "
+        "If None, the period end advances by exactly interval months.",
+    )
+    target_wallet_id: str | None = Field(
+        None,
+        description="Internal LNbits wallet id to sweep settled sats into "
+        "at each period end. Required when recurring.",
+    )
+    rollover_mode: RolloverMode = Field(
+        "counts_as_progress",
+        description="What to do with sats above the target (or all sats "
+        "when sweep_mode is entire_amount) after a sweep. "
+        "counts_as_progress seeds the next period's current_amount; "
+        "reset_to_zero drops the counter to 0 (sats stay in the goal wallet).",
+    )
+    sweep_mode: SweepMode = Field(
+        "target_amount",
+        description="How much to move to the target wallet at each sweep. "
+        "target_amount moves min(zapped, goal_amount); "
+        "entire_amount moves everything zapped this period.",
     )
 
     @validator("title", "description_above", "description_below")
@@ -128,6 +174,27 @@ class GoalData(BaseModel):
             raise ValueError("target_date must include a timezone")
         return value.astimezone(timezone.utc)
 
+    @validator("recurrence_unit", always=True)
+    def recurring_requires_unit(cls, value, values):
+        if values.get("recurring") and not value:
+            raise ValueError("recurrence_unit is required when recurring is true")
+        return value
+
+    @validator("target_wallet_id", always=True)
+    def recurring_requires_target_wallet(cls, value, values):
+        if values.get("recurring") and not value:
+            raise ValueError("target_wallet_id is required when recurring is true")
+        return value
+
+    @validator("recurrence_day_of_month", always=True)
+    def day_of_month_only_for_months(cls, value, values):
+        unit = values.get("recurrence_unit")
+        if value is not None and unit != "month":
+            raise ValueError(
+                "recurrence_day_of_month is only valid for monthly recurrence"
+            )
+        return value
+
 
 class Goal(GoalData):
     id: str
@@ -135,6 +202,10 @@ class Goal(GoalData):
     current_amount: int = 0
     created_at: datetime
     updated_at: datetime
+    period_index: int = 0
+    period_start: datetime | None = None
+    last_swept_at: datetime | None = None
+    sweeping: bool = False
 
 
 class PublicGoal(BaseModel):
@@ -167,6 +238,27 @@ class PublicGoal(BaseModel):
     lnurl_url: str
     lightning_address: str | None = None
     nostr_pubkey: str | None = None
+    recurring: bool = False
+    period_index: int = 0
+    period_start: datetime | None = None
+    last_swept_at: datetime | None = None
+
+
+class Period(BaseModel):
+    id: str
+    goal_id: str
+    period_index: int
+    period_start: datetime
+    period_end: datetime
+    zapped_total: int = Field(..., ge=0, le=MAX_SATS)
+    moved_to_target: int = Field(..., ge=0, le=MAX_SATS)
+    rollover: int = Field(..., ge=0, le=MAX_SATS)
+    sweep_mode: SweepMode
+    swept_at: datetime
+
+
+class SweepError(Exception):
+    """Raised when a recurring goal sweep cannot be completed."""
 
 
 class Contribution(BaseModel):

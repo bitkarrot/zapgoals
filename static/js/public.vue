@@ -64,6 +64,21 @@
             <div class="text-weight-bold q-mt-xs" v-text="countdownLabel"></div>
           </div>
 
+          <div v-if="goal.recurring" class="text-center q-mb-lg">
+            <q-badge color="teal" class="q-pa-sm">
+              <q-icon
+                name="autorenew"
+                class="q-mr-xs"
+                aria-hidden="true"
+              ></q-icon>
+              <span
+                v-text="
+                  $t('zapgoals.period_label', {index: goal.period_index + 1})
+                "
+              ></span>
+            </q-badge>
+          </div>
+
           <p
             v-if="goal.description_below"
             class="zapgoals-description q-mb-lg"

@@ -43,3 +43,25 @@ def test_openapi_documents_amount_units_and_invoice_expiry():
     ]
     assert invoice_operation["responses"].get("201")
     assert "10-minute" in invoice_operation["description"]
+
+
+def test_openapi_exposes_recurring_endpoints():
+    app = FastAPI()
+    app.include_router(zapgoals_ext)
+    schema = app.openapi()
+    paths = schema["paths"]
+
+    assert (
+        paths["/zapgoals/api/v1/goals/{goal_id}/sweep"]["post"]["summary"]
+        == "Sweep a recurring goal"
+    )
+    assert (
+        paths["/zapgoals/api/v1/recurring/sweep-due"]["post"]["summary"]
+        == "Sweep all due recurring goals"
+    )
+    assert (
+        paths["/zapgoals/api/v1/goals/{goal_id}/periods"]["get"]["summary"]
+        == "List period history for a recurring goal"
+    )
+    assert "Period" in schema["components"]["schemas"]
+    assert "recurring" in schema["components"]["schemas"]["GoalData"]["properties"]

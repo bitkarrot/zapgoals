@@ -104,6 +104,40 @@ window.i18n.global.mergeLocaleMessage('en', {
     pay_with_wallet: 'Pay with wallet',
     wallet_load_error:
       'Bitcoin Connect could not be loaded. You can still pay using the QR code or BOLT11 invoice.',
-    thank_you: 'Payment received. Thank you!'
+    thank_you: 'Payment received. Thank you!',
+    recurring: 'Recurring goal',
+    recurring_hint:
+      'When enabled, the goal resets on a schedule. Settled sats are swept to a target wallet at each period end and the goal continues with the same ID.',
+    recurrence_unit: 'Recurrence unit',
+    recurrence_interval: 'Interval',
+    recurrence_day_of_month: 'Day of month (optional)',
+    recurrence_day_hint: 'Clamped to the last day of short months.',
+    target_wallet: 'Target wallet for sweeps',
+    target_wallet_hint:
+      'Internal LNbits wallet to receive swept sats. The goal wallet should be dedicated to this goal.',
+    rollover_mode: 'Rollover mode',
+    rollover_counts: 'Count excess as next period progress',
+    rollover_reset: 'Reset progress to zero each period',
+    sweep_mode: 'Sweep mode',
+    sweep_target_amount: 'Move target amount (excess rolls over)',
+    sweep_entire_amount: 'Move everything zapped this period',
+    recurring_required:
+      'Recurring goals need a unit, interval, and target wallet.',
+    sweep_now: 'Sweep now',
+    sweep_confirm:
+      'Sweep this goal now? Settled sats will be moved to the target wallet.',
+    sweep_success: 'Period swept successfully.',
+    sweep_failed: 'Sweep failed: {detail}',
+    view_periods: 'Period history',
+    period_index: 'Period',
+    period_start: 'Start',
+    period_end: 'End',
+    period_zapped: 'Zapped',
+    period_moved: 'Moved',
+    period_rollover: 'Rollover',
+    period_swept_at: 'Swept at',
+    no_periods: 'No periods swept yet.',
+    recurring_badge: 'Recurring',
+    period_label: 'Period {index}'
   }
 })

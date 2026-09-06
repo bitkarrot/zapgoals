@@ -4,8 +4,8 @@ from fastapi import APIRouter
 from loguru import logger
 
 from .crud import db
-from .settings import lightning_address_enabled
-from .tasks import wait_for_paid_invoices
+from .settings import builtin_scheduler_enabled, lightning_address_enabled
+from .tasks import sweep_due_loop, wait_for_paid_invoices
 from .views import zapgoals_generic_router
 from .views_api import zapgoals_api_router
 
@@ -34,6 +34,11 @@ def zapgoals_start() -> None:
 
     task = create_permanent_unique_task("ext_zapgoals", wait_for_paid_invoices)
     scheduled_tasks.append(task)
+    if builtin_scheduler_enabled:
+        scheduler_task = create_permanent_unique_task(
+            "ext_zapgoals_scheduler", sweep_due_loop
+        )
+        scheduled_tasks.append(scheduler_task)
 
 
 def zapgoals_stop() -> None:

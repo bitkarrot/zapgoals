@@ -14,9 +14,11 @@ from pydantic import parse_obj_as
 from .crud import (
     create_goal,
     delete_goal_and_contributions,
+    get_due_recurring_goals,
     get_goal,
     get_goal_by_username,
     get_goals,
+    get_periods,
     update_goal,
 )
 from .models import (
@@ -25,7 +27,9 @@ from .models import (
     GoalData,
     InvoiceRequest,
     InvoiceResponse,
+    Period,
     PublicGoal,
+    SweepError,
 )
 from .services import (
     COMMENT_ALLOWED,
@@ -33,6 +37,7 @@ from .services import (
     lnurl_metadata,
     make_lnurl_response,
     public_goal,
+    sweep_recurring_goal,
     validate_zap_request,
 )
 
@@ -253,6 +258,77 @@ async def api_lnurl_callback(
         return LnurlErrorResponse(reason="Unable to create invoice")
     payment_request = parse_obj_as(LightningInvoice, invoice.payment_request)
     return LnurlPayActionResponse(pr=payment_request, routes=[])
+
+
+@zapgoals_api_router.post(
+    "/goals/{goal_id}/sweep",
+    response_model=Period,
+    summary="Sweep a recurring goal",
+    description=(
+        "Manually triggers a period-end sweep for a recurring goal. Moves "
+        "settled sats to the target wallet, records a period ledger row, "
+        "and advances the goal to the next period. The goal must be "
+        "recurring and its target_date must be in the past."
+    ),
+)
+async def api_sweep_goal(
+    goal_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
+) -> Period:
+    goal = await get_goal(goal_id)
+    if not goal:
+        raise _not_found()
+    _check_owner(goal, wallet)
+    try:
+        return await sweep_recurring_goal(goal_id)
+    except SweepError as exc:
+        raise HTTPException(status_code=HTTPStatus.CONFLICT, detail=str(exc)) from exc
+
+
+@zapgoals_api_router.post(
+    "/recurring/sweep-due",
+    response_model=list[Period],
+    summary="Sweep all due recurring goals",
+    description=(
+        "Sweeps every recurring goal owned by the wallet whose period has "
+        "ended. Intended as the target for a scheduled HTTP call (e.g. "
+        "the LNbits scheduler extension firing hourly). Each goal is swept "
+        "independently; failures for one goal do not block the others."
+    ),
+)
+async def api_sweep_due(
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> list[Period]:
+    due = await get_due_recurring_goals(wallet.wallet.id)
+    results: list[Period] = []
+    for goal in due:
+        try:
+            period = await sweep_recurring_goal(goal.id)
+            results.append(period)
+        except SweepError as exc:
+            from loguru import logger
+
+            logger.warning("Sweep failed for goal {}: {}", goal.id, str(exc))
+    return results
+
+
+@zapgoals_api_router.get(
+    "/goals/{goal_id}/periods",
+    response_model=list[Period],
+    summary="List period history for a recurring goal",
+    description=(
+        "Returns the per-period ledger for a recurring goal, ordered by "
+        "period index ascending. Each row records the zapped total, amount "
+        "moved to the target wallet, rollover, and sweep timestamp."
+    ),
+)
+async def api_goal_periods(
+    goal_id: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
+) -> list[Period]:
+    goal = await get_goal(goal_id)
+    if not goal:
+        raise _not_found()
+    _check_owner(goal, wallet)
+    return await get_periods(goal_id)
 
 
 @zapgoals_api_router.get(
