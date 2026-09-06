@@ -44,7 +44,9 @@ window.PageZapGoals = {
         {label: 'Entire amount', value: 'entire_amount'}
       ],
       periodsDialog: {show: false, loading: false, goal: null, periods: []},
-      sweeping: false
+      sweeping: false,
+      schedulerStatus: null,
+      settingUpScheduler: false
     }
   },
   computed: {
@@ -204,9 +206,56 @@ window.PageZapGoals = {
             }
           : this.emptyGoal()
       }
+      this.fetchSchedulerStatus()
     },
     closeGoalDialog() {
       this.formDialog.show = false
+    },
+    async fetchSchedulerStatus() {
+      const wallet = this.g.user.wallets?.[0]
+      if (!wallet) return
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          '/zapgoals/api/v1/recurring/scheduler-status',
+          wallet.inkey
+        )
+        this.schedulerStatus = data
+      } catch (error) {
+        this.schedulerStatus = null
+      }
+    },
+    async setupSchedulerJob() {
+      const wallet = this.walletFor(this.formDialog.data.wallet)
+      if (!wallet) return
+      this.settingUpScheduler = true
+      try {
+        const {data} = await LNbits.api.request(
+          'POST',
+          '/zapgoals/api/v1/recurring/setup-scheduler',
+          wallet.adminkey
+        )
+        if (data.success) {
+          Quasar.Notify.create({
+            type: 'positive',
+            message: this.$t('zapgoals.setup_scheduler_success'),
+            icon: null
+          })
+          await this.fetchSchedulerStatus()
+        } else {
+          Quasar.Notify.create({
+            type: 'negative',
+            message: this.$t('zapgoals.setup_scheduler_failed', {
+              detail: data.detail
+            }),
+            icon: null
+          })
+        }
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      } finally {
+        this.settingUpScheduler = false
+      }
     },
     async saveGoal() {
       const valid = await this.$refs.goalForm.validate()
@@ -250,9 +299,10 @@ window.PageZapGoals = {
         recurring: data.recurring || false,
         recurrence_unit: data.recurring ? data.recurrence_unit : null,
         recurrence_interval: Number(data.recurrence_interval) || 1,
-        recurrence_day_of_month: data.recurring
-          ? Number(data.recurrence_day_of_month) || null
-          : null,
+        recurrence_day_of_month:
+          data.recurring && data.recurrence_unit === 'month'
+            ? Number(data.recurrence_day_of_month) || null
+            : null,
         target_wallet_id: data.recurring ? data.target_wallet_id : null,
         rollover_mode: data.rollover_mode || 'counts_as_progress',
         sweep_mode: data.sweep_mode || 'target_amount'

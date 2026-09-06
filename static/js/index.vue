@@ -356,8 +356,17 @@
                   filled
                   type="datetime-local"
                   v-model="formDialog.data.target_date"
-                  :label="$t('zapgoals.target_date') + ' *'"
+                  :label="
+                    formDialog.data.recurring
+                      ? $t('zapgoals.target_date_recurring') + ' *'
+                      : $t('zapgoals.target_date') + ' *'
+                  "
                   stack-label
+                  :hint="
+                    formDialog.data.recurring
+                      ? $t('zapgoals.target_date_recurring_hint')
+                      : ''
+                  "
                   :rules="[value => !!value || $t('zapgoals.required')]"
                 ></q-input>
               </div>
@@ -450,6 +459,108 @@
                 v-text="$t('zapgoals.recurring_hint')"
               ></div>
               <div v-if="formDialog.data.recurring">
+                <q-banner rounded class="bg-grey-2 text-dark q-mb-md">
+                  <div
+                    class="text-subtitle2 q-mb-xs"
+                    v-text="$t('zapgoals.sweep_trigger')"
+                  ></div>
+                  <div
+                    class="text-body2 text-grey-7 q-mb-sm"
+                    v-text="$t('zapgoals.sweep_trigger_hint')"
+                  ></div>
+                  <div class="q-gutter-y-xs">
+                    <div class="row items-center">
+                      <q-icon
+                        :name="
+                          schedulerStatus && schedulerStatus.builtin_scheduler
+                            ? 'check_circle'
+                            : 'cancel'
+                        "
+                        :color="
+                          schedulerStatus && schedulerStatus.builtin_scheduler
+                            ? 'positive'
+                            : 'grey-6'
+                        "
+                        size="1.1rem"
+                        class="q-mr-xs"
+                      ></q-icon>
+                      <span
+                        class="text-body2"
+                        v-text="
+                          schedulerStatus && schedulerStatus.builtin_scheduler
+                            ? $t('zapgoals.builtin_scheduler_active')
+                            : $t('zapgoals.builtin_scheduler_inactive')
+                        "
+                      ></span>
+                    </div>
+                    <div class="row items-center">
+                      <q-icon
+                        :name="
+                          schedulerStatus && schedulerStatus.scheduler_extension
+                            ? 'check_circle'
+                            : 'cancel'
+                        "
+                        :color="
+                          schedulerStatus && schedulerStatus.scheduler_extension
+                            ? 'positive'
+                            : 'grey-6'
+                        "
+                        size="1.1rem"
+                        class="q-mr-xs"
+                      ></q-icon>
+                      <span
+                        class="text-body2"
+                        v-text="
+                          schedulerStatus && schedulerStatus.scheduler_extension
+                            ? $t('zapgoals.scheduler_extension_active')
+                            : $t('zapgoals.scheduler_extension_inactive')
+                        "
+                      ></span>
+                    </div>
+                    <div
+                      v-if="
+                        schedulerStatus && schedulerStatus.scheduler_extension
+                      "
+                      class="row items-center"
+                    >
+                      <q-icon
+                        :name="
+                          schedulerStatus.scheduler_job_exists
+                            ? 'check_circle'
+                            : 'cancel'
+                        "
+                        :color="
+                          schedulerStatus.scheduler_job_exists
+                            ? 'positive'
+                            : 'grey-6'
+                        "
+                        size="1.1rem"
+                        class="q-mr-xs"
+                      ></q-icon>
+                      <span
+                        class="text-body2"
+                        v-text="
+                          schedulerStatus.scheduler_job_exists
+                            ? $t('zapgoals.scheduler_job_exists')
+                            : $t('zapgoals.scheduler_job_missing')
+                        "
+                      ></span>
+                      <q-btn
+                        v-if="!schedulerStatus.scheduler_job_exists"
+                        flat
+                        dense
+                        no-caps
+                        color="primary"
+                        size="sm"
+                        icon="schedule"
+                        :label="$t('zapgoals.setup_scheduler')"
+                        :loading="settingUpScheduler"
+                        @click="setupSchedulerJob"
+                        class="q-ml-sm"
+                      ></q-btn>
+                    </div>
+                  </div>
+                </q-banner>
                 <div class="row q-col-gutter-md">
                   <div class="col-12 col-sm-6">
                     <q-select

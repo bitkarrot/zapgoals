@@ -138,6 +138,21 @@ window.i18n.global.mergeLocaleMessage('en', {
     period_swept_at: 'Swept at',
     no_periods: 'No periods swept yet.',
     recurring_badge: 'Recurring',
-    period_label: 'Period {index}'
+    period_label: 'Period {index}',
+    sweep_trigger: 'Automatic sweep trigger',
+    sweep_trigger_hint:
+      'Sweeps run automatically when the period ends. Enable one of the options below.',
+    builtin_scheduler_active: 'Built-in scheduler: Active',
+    builtin_scheduler_inactive: 'Built-in scheduler: Disabled',
+    scheduler_extension_active: 'Scheduler extension: Installed',
+    scheduler_extension_inactive: 'Scheduler extension: Not installed',
+    scheduler_job_exists: 'Scheduler job: Configured',
+    scheduler_job_missing: 'Scheduler job: Not configured',
+    setup_scheduler: 'Set up scheduler job',
+    setup_scheduler_success: 'Scheduler job created. Sweeps will run hourly.',
+    setup_scheduler_failed: 'Could not create scheduler job: {detail}',
+    target_date_recurring: 'First period end date',
+    target_date_recurring_hint:
+      'When this period ends, sats are swept and the goal advances to the next period.'
   }
 })
