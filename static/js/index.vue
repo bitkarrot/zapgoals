@@ -108,7 +108,7 @@
                 round
                 dense
                 color="teal"
-                icon="sweep"
+                icon="sync"
                 :aria-label="$t('zapgoals.sweep_now')"
                 :loading="sweeping"
                 @click="sweepGoal(props.row)"
@@ -194,7 +194,7 @@
                     flat
                     round
                     color="teal"
-                    icon="sweep"
+                    icon="sync"
                     :loading="sweeping"
                     :aria-label="$t('zapgoals.sweep_now')"
                     @click="sweepGoal(props.row)"
