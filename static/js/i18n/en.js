@@ -156,9 +156,16 @@ window.i18n.global.mergeLocaleMessage('en', {
       'When this period ends, sats are swept and the goal advances to the next period.',
     embed: 'Embed',
     embed_hint:
-      'Copy this snippet and paste it into your website HTML to embed the goal card.',
+      'Copy a snippet and paste it into your website HTML to embed the goal card.',
     embed_snippet: 'Embed snippet',
     copy_snippet: 'Copy snippet',
-    snippet_copied: 'Snippet copied to clipboard.'
+    snippet_copied: 'Snippet copied to clipboard.',
+    embed_type: 'Embed type',
+    embed_iframe: 'Iframe (simple)',
+    embed_widget: 'JS widget (recommended)',
+    embed_iframe_hint:
+      'Simplest. Renders the goal in an iframe. Bitcoin Connect may not work due to browser security restrictions in cross-origin iframes.',
+    embed_widget_hint:
+      'Recommended. Injects a Shadow DOM widget directly into your page. Bitcoin Connect works natively because it runs in your page context.'
   }
 })

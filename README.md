@@ -119,15 +119,25 @@ Each completed period is recorded in a ledger accessible via `GET /zapgoals/api/
 
 ## Embedding a goal on an external website
 
-Any ZapGoal can be embedded on an external website via an iframe. The embed page is a standalone HTML page (no LNbits login or SPA shell required) that renders the full goal card with live progress, countdown, zap button, invoice generation, QR code, and Bitcoin Connect support.
+Any ZapGoal can be embedded on an external website using one of two methods. The embed dialog (accessible via the **Embed** button in the admin panel) lets you choose between them and copy the snippet.
 
-### Getting the embed snippet
+### JS widget (recommended)
 
-1. Open the ZapGoals admin panel.
-2. Click the **Embed** button (code icon) on any goal row.
-3. Copy the iframe snippet from the dialog.
+A `<script>` tag that injects a Shadow DOM widget directly into your page. Bitcoin Connect works natively because the script runs in your page's first-party context — `localStorage` and popups are not restricted.
 
-### Embed snippet format
+```html
+<script
+  src="https://your-lnbits.example.com/zapgoals/embed.js"
+  data-goal="{goal_id}"
+  async
+></script>
+```
+
+The script auto-detects the LNbits server URL from its own `src` attribute. It creates a container element, attaches a Shadow DOM (for CSS isolation from your page), and renders the full goal card with all features: live progress, countdown, zap button, invoice QR, and Bitcoin Connect.
+
+### Iframe (simple)
+
+Renders the goal in an iframe. Simpler but Bitcoin Connect may not work due to browser security restrictions on `localStorage` in cross-origin iframes (Safari blocks this by default). Falls back to QR-only with an "Open full page" link when Bitcoin Connect fails.
 
 ```html
 <iframe
@@ -138,19 +148,17 @@ Any ZapGoal can be embedded on an external website via an iframe. The embed page
 ></iframe>
 ```
 
-Replace `your-lnbits.example.com` with your LNbits instance URL and `{goal_id}` with the goal ID.
-
 ### What the embed shows
 
-The embedded card displays the same content as the public page: goal title, descriptions, progress bar with live updates, current/goal amounts, countdown timer, recurring period badge (if applicable), zap button with suggested amounts, custom amount input, BOLT11 invoice QR code, and Bitcoin Connect (if enabled on the goal). Lightning Address and Nostr badge are also shown when configured.
+Both methods display the same content as the public page: goal title, descriptions, progress bar with live updates, current/goal amounts, countdown timer, recurring period badge (if applicable), zap button with suggested amounts, custom amount input, BOLT11 invoice QR code, and Bitcoin Connect (if enabled on the goal). Lightning Address and Nostr badge are also shown when configured.
 
 ### Technical notes
 
-- The embed page is served at `/zapgoals/{goal_id}/embed` and requires no authentication.
-- It communicates with the LNbits public API (`GET /goals/{id}/public`, `POST /goals/{id}/invoice`) and WebSockets (`/api/v1/ws/{goal_id}`) for live updates.
-- The iframe auto-resizes to fit the card content via `postMessage`.
+- Both methods use the public API (`GET /goals/{id}/public`, `POST /goals/{id}/invoice`) and WebSockets (`/api/v1/ws/{goal_id}`) for live updates — no authentication required.
 - CORS is permissive on LNbits by default, so cross-origin embedding works without additional configuration.
-- QR code invoices always work in the embed. Bitcoin Connect is attempted when the goal's wallet mode includes it, but may fail in cross-origin iframes because browsers can block `localStorage` access (used by Bitcoin Connect to persist wallet connections). When this happens, the embed automatically falls back to the QR-only invoice dialog and shows an "Open full page" link so users can access wallet payments in a first-party context.
+- The JS widget uses Shadow DOM for complete CSS isolation — your page's styles won't affect the widget and vice versa.
+- The iframe auto-resizes to fit the card content via `postMessage`.
+- The JS widget is served at `/zapgoals/embed.js` and the iframe page at `/zapgoals/{goal_id}/embed`.
 
 ## NIP-57
 

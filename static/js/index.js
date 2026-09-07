@@ -50,7 +50,7 @@ window.PageZapGoals = {
       sweeping: false,
       schedulerStatus: null,
       settingUpScheduler: false,
-      embedDialog: {show: false, snippet: ''}
+      embedDialog: {show: false, type: 'widget', snippet: ''}
     }
   },
   computed: {
@@ -490,9 +490,25 @@ window.PageZapGoals = {
       }
     },
     openEmbedDialog(goal) {
-      const url = `${window.location.origin}/zapgoals/${goal.id}/embed`
-      const snippet = `<iframe src="${url}" style="width:100%;max-width:500px;height:600px;border:0;border-radius:1rem;" loading="lazy" title="ZapGoal"></iframe>`
-      this.embedDialog = {show: true, snippet}
+      this.embedDialog = {
+        show: true,
+        type: 'widget',
+        snippet: this.embedSnippet(goal.id, 'widget')
+      }
+      this.$watch(
+        () => this.embedDialog.type,
+        newType => {
+          this.embedDialog.snippet = this.embedSnippet(goal.id, newType)
+        },
+        {immediate: false}
+      )
+    },
+    embedSnippet(goalId, type) {
+      const origin = window.location.origin
+      if (type === 'iframe') {
+        return `<iframe src="${origin}/zapgoals/${goalId}/embed" style="width:100%;max-width:500px;height:600px;border:0;border-radius:1rem;" loading="lazy" title="ZapGoal"></iframe>`
+      }
+      return `<script src="${origin}/zapgoals/embed.js" data-goal="${goalId}" async><\/script>`
     },
     copyEmbedSnippet() {
       this.utils.copyText(this.embedDialog.snippet)

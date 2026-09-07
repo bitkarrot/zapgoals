@@ -813,6 +813,24 @@
             class="text-body2 text-grey-7 q-mb-md"
             v-text="$t('zapgoals.embed_hint')"
           ></div>
+          <q-btn-toggle
+            v-model="embedDialog.type"
+            spread
+            no-caps
+            class="q-mb-md"
+            :options="[
+              {label: $t('zapgoals.embed_widget'), value: 'widget'},
+              {label: $t('zapgoals.embed_iframe'), value: 'iframe'}
+            ]"
+          ></q-btn-toggle>
+          <div
+            class="text-caption text-grey-6 q-mb-md"
+            v-text="
+              embedDialog.type === 'widget'
+                ? $t('zapgoals.embed_widget_hint')
+                : $t('zapgoals.embed_iframe_hint')
+            "
+          ></div>
           <q-input
             filled
             readonly
