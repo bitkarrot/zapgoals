@@ -323,7 +323,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
             invoice: paymentRequest,
             paymentMethods: 'all',
             onPaid: function(){ paymentComplete(); },
-            onCancelled: function(){ showInvoiceDialog(); }
+            onCancelled: function(){ closeDialog(); }
           });
         } catch(e) {
           console.warn('Bitcoin Connect failed in iframe, falling back to QR:', e);
@@ -652,7 +652,7 @@ WIDGET_JS = """
             invoice: data.payment_request,
             paymentMethods: 'all',
             onPaid: function(){paymentComplete();},
-            onCancelled: function(){showInvoiceDialog();}
+            onCancelled: function(){closeDialog();}
           });
         }).catch(function(e){
           console.warn('Bitcoin Connect failed, falling back to QR:', e);
