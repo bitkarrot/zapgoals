@@ -280,13 +280,18 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     btns.forEach(function(b){
       b.classList.toggle('active', b.textContent.indexOf(Number(s).toLocaleString()) !== -1);
     });
-    if(goal.wallet_mode === 'all') createInvoice();
+    if(goal.wallet_mode === 'all'){
+      overlay.classList.remove('show');
+      createInvoice();
+    }
   }
 
+  var creatingInvoice = false;
   function createInvoice(){
+    if(creatingInvoice) return;
     if(!amount || amount < 1) return;
-    var btnColor = goal.progress_color || '#f59e0b';
-    var btnText = contrastColor(btnColor);
+    creatingInvoice = true;
+    overlay.classList.remove('show');
 
     api('POST', '/zapgoals/api/v1/goals/'+GOAL_ID+'/invoice', {
       amount: Number(amount), comment: (comment||'').trim() || null
@@ -300,6 +305,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
         showInvoiceDialog();
       }
     }).catch(function(e){
+      creatingInvoice = false;
       alert('Could not create invoice: ' + e.message);
     });
   }
@@ -368,6 +374,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
   function paymentComplete(){
     if(invoiceSocket){ invoiceSocket.close(); invoiceSocket = null; }
     invoice = null;
+    creatingInvoice = false;
     overlay.classList.remove('show');
     var html = '<div class="zg-thankyou"><h3>Payment received</h3><p>Thank you!</p></div>';
     dialog.innerHTML = html;
@@ -379,6 +386,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
   function closeDialog(){
     overlay.classList.remove('show');
     if(invoiceSocket){ invoiceSocket.close(); invoiceSocket = null; }
+    creatingInvoice = false;
   }
 
   function copyText(text){
@@ -620,11 +628,18 @@ WIDGET_JS = """
     dlg.querySelectorAll('.zg-amt-btn').forEach(function(b){
       b.classList.toggle('active', Number(b.getAttribute('data-amt'))===s);
     });
-    if(goal.wallet_mode==='all') createInvoice();
+    if(goal.wallet_mode==='all'){
+      overlay.classList.remove('show');
+      createInvoice();
+    }
   }
 
+  var creatingInvoice = false;
   function createInvoice(){
+    if(creatingInvoice) return;
     if(!amount||amount<1) return;
+    creatingInvoice = true;
+    overlay.classList.remove('show');
     api('POST','/zapgoals/api/v1/goals/'+goalId+'/invoice',{amount:Number(amount),comment:(comment||'').trim()||null}).then(function(data){
       invoice = data;
       watchInvoice(data.payment_hash);
@@ -646,7 +661,10 @@ WIDGET_JS = """
       } else {
         showInvoiceDialog();
       }
-    }).catch(function(e){alert('Could not create invoice: '+e.message);});
+    }).catch(function(e){
+      creatingInvoice = false;
+      alert('Could not create invoice: '+e.message);
+    });
   }
 
   function showInvoiceDialog(){
@@ -681,6 +699,7 @@ WIDGET_JS = """
   function paymentComplete(){
     if(invoiceSocket){invoiceSocket.close();invoiceSocket=null;}
     invoice = null;
+    creatingInvoice = false;
     overlay.classList.remove('show');
     var dlg = document.createElement('div');
     dlg.className = 'zg-dialog';
@@ -692,7 +711,11 @@ WIDGET_JS = """
     getGoal(true);
   }
 
-  function closeDialog(){overlay.classList.remove('show');if(invoiceSocket){invoiceSocket.close();invoiceSocket=null;}}
+  function closeDialog(){
+    overlay.classList.remove('show');
+    if(invoiceSocket){invoiceSocket.close();invoiceSocket=null;}
+    creatingInvoice = false;
+  }
 
   function copyText(text){try{navigator.clipboard.writeText(text);}catch(e){}}
 
