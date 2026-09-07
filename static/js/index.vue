@@ -190,6 +190,27 @@
                     :href="publicUrl(props.row)"
                   ></q-btn>
                   <q-btn
+                    v-if="props.row.recurring"
+                    flat
+                    round
+                    color="teal"
+                    icon="sweep"
+                    :loading="sweeping"
+                    :aria-label="$t('zapgoals.sweep_now')"
+                    @click="sweepGoal(props.row)"
+                    ><q-tooltip v-text="$t('zapgoals.sweep_now')"></q-tooltip
+                  ></q-btn>
+                  <q-btn
+                    v-if="props.row.recurring"
+                    flat
+                    round
+                    color="info"
+                    icon="history"
+                    :aria-label="$t('zapgoals.view_periods')"
+                    @click="openPeriodsDialog(props.row)"
+                    ><q-tooltip v-text="$t('zapgoals.view_periods')"></q-tooltip
+                  ></q-btn>
+                  <q-btn
                     flat
                     round
                     color="primary"
