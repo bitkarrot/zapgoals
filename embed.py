@@ -310,6 +310,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     });
   }
 
+  var bcPayment = null;
   function tryBitcoinConnect(paymentRequest){
     // Bitcoin Connect uses localStorage to persist wallet connections.
     // In a cross-origin iframe, browsers may block localStorage access
@@ -319,7 +320,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
       import('https://esm.sh/@getalby/bitcoin-connect@3.12.3').then(function(bc){
         try {
           bc.init({appName:'ZapGoals', showBalance:false, persistConnection:true});
-          bc.launchPaymentModal({
+          bcPayment = bc.launchPaymentModal({
             invoice: paymentRequest,
             paymentMethods: 'all',
             onPaid: function(){ paymentComplete(); },
@@ -372,6 +373,11 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
   }
 
   function paymentComplete(){
+    if(bcPayment && bcPayment.setPaid){
+      var p = bcPayment;
+      bcPayment = null;
+      p.setPaid({preimage: ''});
+    }
     if(invoiceSocket){ invoiceSocket.close(); invoiceSocket = null; }
     invoice = null;
     creatingInvoice = false;
@@ -387,6 +393,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     overlay.classList.remove('show');
     if(invoiceSocket){ invoiceSocket.close(); invoiceSocket = null; }
     creatingInvoice = false;
+    bcPayment = null;
   }
 
   function copyText(text){
@@ -635,6 +642,7 @@ WIDGET_JS = """
   }
 
   var creatingInvoice = false;
+  var bcPayment = null;
   function createInvoice(){
     if(creatingInvoice) return;
     if(!amount||amount<1) return;
@@ -648,7 +656,7 @@ WIDGET_JS = """
         // so localStorage and popups work normally.
         import('https://esm.sh/@getalby/bitcoin-connect@3.12.3').then(function(bc){
           bc.init({appName:'ZapGoals',showBalance:false,persistConnection:true});
-          bc.launchPaymentModal({
+          bcPayment = bc.launchPaymentModal({
             invoice: data.payment_request,
             paymentMethods: 'all',
             onPaid: function(){paymentComplete();},
@@ -697,6 +705,11 @@ WIDGET_JS = """
   }
 
   function paymentComplete(){
+    if(bcPayment && bcPayment.setPaid){
+      var p = bcPayment;
+      bcPayment = null;
+      p.setPaid({preimage: ''});
+    }
     if(invoiceSocket){invoiceSocket.close();invoiceSocket=null;}
     invoice = null;
     creatingInvoice = false;
@@ -715,6 +728,7 @@ WIDGET_JS = """
     overlay.classList.remove('show');
     if(invoiceSocket){invoiceSocket.close();invoiceSocket=null;}
     creatingInvoice = false;
+    bcPayment = null;
   }
 
   function copyText(text){try{navigator.clipboard.writeText(text);}catch(e){}}
