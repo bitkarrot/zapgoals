@@ -96,6 +96,39 @@
                 flat
                 round
                 dense
+                color="secondary"
+                icon="code"
+                :aria-label="$t('zapgoals.embed')"
+                @click="openEmbedDialog(props.row)"
+                ><q-tooltip v-text="$t('zapgoals.embed')"></q-tooltip
+              ></q-btn>
+              <q-btn
+                v-if="props.row.recurring"
+                flat
+                round
+                dense
+                color="teal"
+                icon="sweep"
+                :aria-label="$t('zapgoals.sweep_now')"
+                :loading="sweeping"
+                @click="sweepGoal(props.row)"
+                ><q-tooltip v-text="$t('zapgoals.sweep_now')"></q-tooltip
+              ></q-btn>
+              <q-btn
+                v-if="props.row.recurring"
+                flat
+                round
+                dense
+                color="info"
+                icon="history"
+                :aria-label="$t('zapgoals.view_periods')"
+                @click="openPeriodsDialog(props.row)"
+                ><q-tooltip v-text="$t('zapgoals.view_periods')"></q-tooltip
+              ></q-btn>
+              <q-btn
+                flat
+                round
+                dense
                 color="primary"
                 icon="edit"
                 :aria-label="$t('zapgoals.edit')"
@@ -333,8 +366,17 @@
                   filled
                   type="datetime-local"
                   v-model="formDialog.data.target_date"
-                  :label="$t('zapgoals.target_date') + ' *'"
+                  :label="
+                    formDialog.data.recurring
+                      ? $t('zapgoals.target_date_recurring') + ' *'
+                      : $t('zapgoals.target_date') + ' *'
+                  "
                   stack-label
+                  :hint="
+                    formDialog.data.recurring
+                      ? $t('zapgoals.target_date_recurring_hint')
+                      : ''
+                  "
                   :rules="[value => !!value || $t('zapgoals.required')]"
                 ></q-input>
               </div>
@@ -411,6 +453,196 @@
                 :hint="$t('zapgoals.username_hint')"
                 :rules="[usernameRule]"
               ></q-input>
+            </section>
+
+            <q-separator class="q-my-lg"></q-separator>
+
+            <section>
+              <div class="row items-center q-mb-xs">
+                <q-toggle
+                  v-model="formDialog.data.recurring"
+                  :label="$t('zapgoals.recurring')"
+                />
+              </div>
+              <div
+                class="text-body1 text-grey-6 q-mb-md"
+                v-text="$t('zapgoals.recurring_hint')"
+              ></div>
+              <div v-if="formDialog.data.recurring">
+                <q-banner rounded class="bg-grey-2 text-dark q-mb-md">
+                  <div
+                    class="text-subtitle2 q-mb-xs"
+                    v-text="$t('zapgoals.sweep_trigger')"
+                  ></div>
+                  <div
+                    class="text-body2 text-grey-7 q-mb-sm"
+                    v-text="$t('zapgoals.sweep_trigger_hint')"
+                  ></div>
+                  <div class="q-gutter-y-xs">
+                    <div class="row items-center">
+                      <q-icon
+                        :name="
+                          schedulerStatus && schedulerStatus.builtin_scheduler
+                            ? 'check_circle'
+                            : 'cancel'
+                        "
+                        :color="
+                          schedulerStatus && schedulerStatus.builtin_scheduler
+                            ? 'positive'
+                            : 'grey-6'
+                        "
+                        size="1.1rem"
+                        class="q-mr-xs"
+                      ></q-icon>
+                      <span
+                        class="text-body2"
+                        v-text="
+                          schedulerStatus && schedulerStatus.builtin_scheduler
+                            ? $t('zapgoals.builtin_scheduler_active')
+                            : $t('zapgoals.builtin_scheduler_inactive')
+                        "
+                      ></span>
+                    </div>
+                    <div class="row items-center">
+                      <q-icon
+                        :name="
+                          schedulerStatus && schedulerStatus.scheduler_extension
+                            ? 'check_circle'
+                            : 'cancel'
+                        "
+                        :color="
+                          schedulerStatus && schedulerStatus.scheduler_extension
+                            ? 'positive'
+                            : 'grey-6'
+                        "
+                        size="1.1rem"
+                        class="q-mr-xs"
+                      ></q-icon>
+                      <span
+                        class="text-body2"
+                        v-text="
+                          schedulerStatus && schedulerStatus.scheduler_extension
+                            ? $t('zapgoals.scheduler_extension_active')
+                            : $t('zapgoals.scheduler_extension_inactive')
+                        "
+                      ></span>
+                    </div>
+                    <div
+                      v-if="
+                        schedulerStatus && schedulerStatus.scheduler_extension
+                      "
+                      class="row items-center"
+                    >
+                      <q-icon
+                        :name="
+                          schedulerStatus.scheduler_job_exists
+                            ? 'check_circle'
+                            : 'cancel'
+                        "
+                        :color="
+                          schedulerStatus.scheduler_job_exists
+                            ? 'positive'
+                            : 'grey-6'
+                        "
+                        size="1.1rem"
+                        class="q-mr-xs"
+                      ></q-icon>
+                      <span
+                        class="text-body2"
+                        v-text="
+                          schedulerStatus.scheduler_job_exists
+                            ? $t('zapgoals.scheduler_job_exists')
+                            : $t('zapgoals.scheduler_job_missing')
+                        "
+                      ></span>
+                      <q-btn
+                        v-if="!schedulerStatus.scheduler_job_exists"
+                        flat
+                        dense
+                        no-caps
+                        color="primary"
+                        size="sm"
+                        icon="schedule"
+                        :label="$t('zapgoals.setup_scheduler')"
+                        :loading="settingUpScheduler"
+                        @click="setupSchedulerJob"
+                        class="q-ml-sm"
+                      ></q-btn>
+                    </div>
+                  </div>
+                </q-banner>
+                <div class="row q-col-gutter-md">
+                  <div class="col-12 col-sm-6">
+                    <q-select
+                      filled
+                      emit-value
+                      map-options
+                      v-model="formDialog.data.recurrence_unit"
+                      :options="recurrenceUnitOptions"
+                      :label="$t('zapgoals.recurrence_unit') + ' *'"
+                    ></q-select>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <q-input
+                      filled
+                      type="number"
+                      min="1"
+                      max="365"
+                      step="1"
+                      v-model.number="formDialog.data.recurrence_interval"
+                      :label="$t('zapgoals.recurrence_interval') + ' *'"
+                    ></q-input>
+                  </div>
+                </div>
+                <div
+                  v-if="formDialog.data.recurrence_unit === 'month'"
+                  class="row q-col-gutter-md q-mt-md"
+                >
+                  <div class="col-12 col-sm-6">
+                    <q-input
+                      filled
+                      type="number"
+                      min="1"
+                      max="31"
+                      step="1"
+                      v-model.number="formDialog.data.recurrence_day_of_month"
+                      :label="$t('zapgoals.recurrence_day_of_month')"
+                      :hint="$t('zapgoals.recurrence_day_hint')"
+                    ></q-input>
+                  </div>
+                </div>
+                <q-select
+                  filled
+                  emit-value
+                  map-options
+                  class="q-mt-md"
+                  v-model="formDialog.data.target_wallet_id"
+                  :options="walletOptions"
+                  :label="$t('zapgoals.target_wallet') + ' *'"
+                  :hint="$t('zapgoals.target_wallet_hint')"
+                  :rules="[
+                    value => !!value || $t('zapgoals.recurring_required')
+                  ]"
+                ></q-select>
+                <q-select
+                  filled
+                  emit-value
+                  map-options
+                  class="q-mt-md"
+                  v-model="formDialog.data.rollover_mode"
+                  :options="rolloverModeOptions"
+                  :label="$t('zapgoals.rollover_mode')"
+                ></q-select>
+                <q-select
+                  filled
+                  emit-value
+                  map-options
+                  class="q-mt-md"
+                  v-model="formDialog.data.sweep_mode"
+                  :options="sweepModeOptions"
+                  :label="$t('zapgoals.sweep_mode')"
+                ></q-select>
+              </div>
             </section>
 
             <q-input
@@ -504,6 +736,7 @@
             >
               <div
                 class="text-subtitle1 q-mb-sm"
+                :style="{fontWeight: previewStyle.fontWeight}"
                 v-text="formDialog.data.title || $t('zapgoals.preview_title')"
               ></div>
               <div
@@ -537,6 +770,86 @@
               ></q-btn>
             </div>
           </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="periodsDialog.show">
+      <q-card class="lnbits__dialog-card" style="max-width: 900px; width: 100%">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6" v-text="$t('zapgoals.view_periods')"></div>
+          <q-space></q-space>
+          <q-btn v-close-popup flat round dense icon="close"></q-btn>
+        </q-card-section>
+        <q-card-section>
+          <div v-if="periodsDialog.loading" class="text-center q-pa-lg">
+            <q-spinner color="primary" size="2rem"></q-spinner>
+          </div>
+          <q-table
+            v-else-if="periodsDialog.periods.length"
+            flat
+            :rows="periodsDialog.periods"
+            :columns="periodColumns()"
+            row-key="id"
+            :pagination="{rowsPerPage: 10}"
+          ></q-table>
+          <div v-else class="text-center q-pa-lg text-grey-6">
+            <q-icon name="history" size="2rem"></q-icon>
+            <div class="q-mt-sm" v-text="$t('zapgoals.no_periods')"></div>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="embedDialog.show">
+      <q-card class="lnbits__dialog-card" style="max-width: 600px; width: 100%">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6" v-text="$t('zapgoals.embed')"></div>
+          <q-space></q-space>
+          <q-btn v-close-popup flat round dense icon="close"></q-btn>
+        </q-card-section>
+        <q-card-section>
+          <div
+            class="text-body2 text-grey-7 q-mb-md"
+            v-text="$t('zapgoals.embed_hint')"
+          ></div>
+          <q-btn-toggle
+            v-model="embedDialog.type"
+            spread
+            no-caps
+            class="q-mb-md"
+            :options="[
+              {label: $t('zapgoals.embed_widget'), value: 'widget'},
+              {label: $t('zapgoals.embed_iframe'), value: 'iframe'}
+            ]"
+          ></q-btn-toggle>
+          <div
+            class="text-caption text-grey-6 q-mb-md"
+            v-text="
+              embedDialog.type === 'widget'
+                ? $t('zapgoals.embed_widget_hint')
+                : $t('zapgoals.embed_iframe_hint')
+            "
+          ></div>
+          <q-input
+            filled
+            readonly
+            type="textarea"
+            rows="6"
+            :model-value="embedDialog.snippet"
+            class="q-mb-md"
+          >
+            <template v-slot:append>
+              <q-btn
+                flat
+                round
+                dense
+                icon="content_copy"
+                :aria-label="$t('zapgoals.copy_snippet')"
+                @click="copyEmbedSnippet"
+              ></q-btn>
+            </template>
+          </q-input>
         </q-card-section>
       </q-card>
     </q-dialog>

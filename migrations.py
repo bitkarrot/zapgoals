@@ -70,3 +70,73 @@ async def m003_font_name_and_weight(db):
         ADD COLUMN font_weight INTEGER NOT NULL DEFAULT 400
         """)
     await db.execute("UPDATE zapgoals.goals SET font_name = font_family")
+
+
+async def m004_recurring(db):
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN recurring BOOLEAN NOT NULL DEFAULT FALSE
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN recurrence_unit TEXT
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN recurrence_interval INTEGER NOT NULL DEFAULT 1
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN recurrence_day_of_month INTEGER
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN target_wallet_id TEXT
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN rollover_mode TEXT NOT NULL DEFAULT 'counts_as_progress'
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN sweep_mode TEXT NOT NULL DEFAULT 'target_amount'
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN period_index INTEGER NOT NULL DEFAULT 0
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN period_start TIMESTAMP
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN last_swept_at TIMESTAMP
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN sweeping BOOLEAN NOT NULL DEFAULT FALSE
+        """)
+    await db.execute("""
+        CREATE TABLE zapgoals.periods (
+            id TEXT PRIMARY KEY,
+            goal_id TEXT NOT NULL,
+            period_index INTEGER NOT NULL,
+            period_start TIMESTAMP NOT NULL,
+            period_end TIMESTAMP NOT NULL,
+            zapped_total INTEGER NOT NULL,
+            moved_to_target INTEGER NOT NULL,
+            rollover INTEGER NOT NULL,
+            sweep_mode TEXT NOT NULL,
+            swept_at TIMESTAMP NOT NULL,
+            CHECK (zapped_total >= 0),
+            CHECK (moved_to_target >= 0),
+            CHECK (rollover >= 0),
+            CHECK (sweep_mode IN ('target_amount', 'entire_amount')),
+            UNIQUE (goal_id, period_index)
+        )
+        """)
+    table = f"{db.references_schema}periods"
+    await db.execute(
+        f"CREATE INDEX zapgoals_periods_goal_idx ON {table} (goal_id, period_index)"
+    )

@@ -16,6 +16,17 @@ def valid_goal_data(**overrides):
     return data
 
 
+def valid_recurring_data(**overrides):
+    data = valid_goal_data(
+        recurring=True,
+        recurrence_unit="month",
+        recurrence_interval=1,
+        target_wallet_id="target-wallet-123",
+    )
+    data.update(overrides)
+    return data
+
+
 def test_goal_target_amount_and_date_are_validated():
     goal = GoalData(**valid_goal_data())
 
@@ -122,3 +133,61 @@ def test_lightning_address_username_is_normalized_and_validated():
 
     with pytest.raises(ValidationError):
         GoalData(**valid_goal_data(lightning_address_username="not an address"))
+
+
+def test_non_recurring_goal_defaults_are_off():
+    goal = GoalData(**valid_goal_data())
+    assert goal.recurring is False
+    assert goal.recurrence_unit is None
+    assert goal.recurrence_interval == 1
+    assert goal.recurrence_day_of_month is None
+    assert goal.target_wallet_id is None
+    assert goal.rollover_mode == "counts_as_progress"
+    assert goal.sweep_mode == "target_amount"
+
+
+def test_recurring_goal_requires_unit():
+    with pytest.raises(ValidationError, match="recurrence_unit"):
+        GoalData(**valid_recurring_data(recurrence_unit=None))
+
+
+def test_recurring_goal_requires_target_wallet():
+    with pytest.raises(ValidationError, match="target_wallet_id"):
+        GoalData(**valid_recurring_data(target_wallet_id=None))
+
+
+def test_recurring_goal_accepts_full_config():
+    goal = GoalData(
+        **valid_recurring_data(
+            recurrence_unit="month",
+            recurrence_interval=2,
+            recurrence_day_of_month=1,
+            rollover_mode="reset_to_zero",
+            sweep_mode="entire_amount",
+        )
+    )
+    assert goal.recurring is True
+    assert goal.recurrence_interval == 2
+    assert goal.recurrence_day_of_month == 1
+    assert goal.rollover_mode == "reset_to_zero"
+    assert goal.sweep_mode == "entire_amount"
+
+
+@pytest.mark.parametrize("unit", ["day", "week"])
+def test_day_of_month_only_valid_for_monthly(unit):
+    with pytest.raises(ValidationError, match="recurrence_day_of_month"):
+        GoalData(
+            **valid_recurring_data(recurrence_unit=unit, recurrence_day_of_month=15)
+        )
+
+
+@pytest.mark.parametrize("interval", [0, -1, 366])
+def test_recurrence_interval_bounds(interval):
+    with pytest.raises(ValidationError):
+        GoalData(**valid_recurring_data(recurrence_interval=interval))
+
+
+@pytest.mark.parametrize("day", [0, 32])
+def test_recurrence_day_of_month_bounds(day):
+    with pytest.raises(ValidationError):
+        GoalData(**valid_recurring_data(recurrence_day_of_month=day))

@@ -29,7 +29,28 @@ window.PageZapGoals = {
       modeOptions: [
         {label: 'Vanilla invoice only', value: 'vanilla'},
         {label: 'Bitcoin Connect', value: 'all'}
-      ]
+      ],
+      recurrenceUnitOptions: [
+        {label: 'Daily', value: 'day'},
+        {label: 'Weekly', value: 'week'},
+        {label: 'Monthly', value: 'month'},
+        {label: 'Quarterly', value: 'quarter'},
+        {label: 'Semi-annual', value: 'half_year'},
+        {label: 'Annual', value: 'year'}
+      ],
+      rolloverModeOptions: [
+        {label: 'Count excess as progress', value: 'counts_as_progress'},
+        {label: 'Reset to zero', value: 'reset_to_zero'}
+      ],
+      sweepModeOptions: [
+        {label: 'Target amount', value: 'target_amount'},
+        {label: 'Entire amount', value: 'entire_amount'}
+      ],
+      periodsDialog: {show: false, loading: false, goal: null, periods: []},
+      sweeping: false,
+      schedulerStatus: null,
+      settingUpScheduler: false,
+      embedDialog: {show: false, type: 'widget', snippet: ''}
     }
   },
   computed: {
@@ -120,7 +141,14 @@ window.PageZapGoals = {
         font_weight: 400,
         nostr_pubkey: null,
         lightning_address_username: null,
-        current_amount: 0
+        current_amount: 0,
+        recurring: false,
+        recurrence_unit: 'month',
+        recurrence_interval: 1,
+        recurrence_day_of_month: null,
+        target_wallet_id: null,
+        rollover_mode: 'counts_as_progress',
+        sweep_mode: 'target_amount'
       }
     },
     walletFor(id) {
@@ -171,13 +199,67 @@ window.PageZapGoals = {
               wallet_mode:
                 goal.wallet_mode === 'nwc' ? 'all' : goal.wallet_mode,
               font_name: goal.font_name || goal.font_family || 'sans-serif',
-              font_weight: Number(goal.font_weight) || 400
+              font_weight: Number(goal.font_weight) || 400,
+              recurring: goal.recurring || false,
+              recurrence_unit: goal.recurrence_unit || 'month',
+              recurrence_interval: goal.recurrence_interval || 1,
+              recurrence_day_of_month: goal.recurrence_day_of_month || null,
+              target_wallet_id: goal.target_wallet_id || null,
+              rollover_mode: goal.rollover_mode || 'counts_as_progress',
+              sweep_mode: goal.sweep_mode || 'target_amount'
             }
           : this.emptyGoal()
       }
+      this.fetchSchedulerStatus()
     },
     closeGoalDialog() {
       this.formDialog.show = false
+    },
+    async fetchSchedulerStatus() {
+      const wallet = this.g.user.wallets?.[0]
+      if (!wallet) return
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          '/zapgoals/api/v1/recurring/scheduler-status',
+          wallet.inkey
+        )
+        this.schedulerStatus = data
+      } catch (error) {
+        this.schedulerStatus = null
+      }
+    },
+    async setupSchedulerJob() {
+      const wallet = this.walletFor(this.formDialog.data.wallet)
+      if (!wallet) return
+      this.settingUpScheduler = true
+      try {
+        const {data} = await LNbits.api.request(
+          'POST',
+          '/zapgoals/api/v1/recurring/setup-scheduler',
+          wallet.adminkey
+        )
+        if (data.success) {
+          Quasar.Notify.create({
+            type: 'positive',
+            message: this.$t('zapgoals.setup_scheduler_success'),
+            icon: null
+          })
+          await this.fetchSchedulerStatus()
+        } else {
+          Quasar.Notify.create({
+            type: 'negative',
+            message: this.$t('zapgoals.setup_scheduler_failed', {
+              detail: data.detail
+            }),
+            icon: null
+          })
+        }
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      } finally {
+        this.settingUpScheduler = false
+      }
     },
     async saveGoal() {
       const valid = await this.$refs.goalForm.validate()
@@ -217,7 +299,17 @@ window.PageZapGoals = {
         font_weight: Number(data.font_weight),
         nostr_pubkey: data.nostr_pubkey?.trim().toLowerCase() || null,
         lightning_address_username:
-          data.lightning_address_username?.trim().toLowerCase() || null
+          data.lightning_address_username?.trim().toLowerCase() || null,
+        recurring: data.recurring || false,
+        recurrence_unit: data.recurring ? data.recurrence_unit : null,
+        recurrence_interval: Number(data.recurrence_interval) || 1,
+        recurrence_day_of_month:
+          data.recurring && data.recurrence_unit === 'month'
+            ? Number(data.recurrence_day_of_month) || null
+            : null,
+        target_wallet_id: data.recurring ? data.target_wallet_id : null,
+        rollover_mode: data.rollover_mode || 'counts_as_progress',
+        sweep_mode: data.sweep_mode || 'target_amount'
       }
       this.saving = true
       try {
@@ -329,6 +421,148 @@ window.PageZapGoals = {
         /^[a-z0-9._-]{1,64}$/.test(value) ||
         this.$t('zapgoals.username_rule')
       )
+    },
+    isDue(goal) {
+      return (
+        goal.recurring &&
+        new Date(goal.target_date).getTime() <= Date.now() &&
+        !goal.sweeping
+      )
+    },
+    sweepGoal(goal) {
+      LNbits.utils
+        .confirmDialog(this.$t('zapgoals.sweep_confirm'))
+        .onOk(async () => {
+          const wallet = this.walletFor(goal.wallet)
+          if (!wallet) return
+          this.sweeping = true
+          try {
+            const {data: period} = await LNbits.api.request(
+              'POST',
+              `/zapgoals/api/v1/goals/${goal.id}/sweep`,
+              wallet.adminkey
+            )
+            const index = this.goals.findIndex(g => g.id === goal.id)
+            if (index !== -1) {
+              const updated = {...goal, ...period}
+              this.goals.splice(index, 1, updated)
+            }
+            Quasar.Notify.create({
+              type: 'positive',
+              message: this.$t('zapgoals.sweep_success'),
+              icon: null
+            })
+          } catch (error) {
+            const detail = error?.response?.data?.detail || error?.message
+            Quasar.Notify.create({
+              type: 'negative',
+              message: this.$t('zapgoals.sweep_failed', {detail}),
+              icon: null
+            })
+          } finally {
+            this.sweeping = false
+          }
+        })
+    },
+    async openPeriodsDialog(goal) {
+      this.periodsDialog = {
+        show: true,
+        loading: true,
+        goal,
+        periods: []
+      }
+      const wallet = this.walletFor(goal.wallet)
+      if (!wallet) {
+        this.periodsDialog.loading = false
+        return
+      }
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          `/zapgoals/api/v1/goals/${goal.id}/periods`,
+          wallet.inkey
+        )
+        this.periodsDialog.periods = Array.isArray(data) ? data : []
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      } finally {
+        this.periodsDialog.loading = false
+      }
+    },
+    openEmbedDialog(goal) {
+      this.embedDialog = {
+        show: true,
+        type: 'widget',
+        snippet: this.embedSnippet(goal.id, 'widget')
+      }
+      this.$watch(
+        () => this.embedDialog.type,
+        newType => {
+          this.embedDialog.snippet = this.embedSnippet(goal.id, newType)
+        },
+        {immediate: false}
+      )
+    },
+    embedSnippet(goalId, type) {
+      const origin = window.location.origin
+      if (type === 'iframe') {
+        return `<iframe src="${origin}/zapgoals/${goalId}/embed" style="width:100%;max-width:500px;height:600px;border:0;border-radius:1rem;" loading="lazy" title="ZapGoal"></iframe>`
+      }
+      return `<script src="${origin}/zapgoals/embed.js" data-goal="${goalId}" async><\/script>`
+    },
+    copyEmbedSnippet() {
+      this.utils.copyText(this.embedDialog.snippet)
+      Quasar.Notify.create({
+        type: 'positive',
+        message: this.$t('zapgoals.snippet_copied'),
+        icon: null
+      })
+    },
+    periodColumns() {
+      return [
+        {
+          name: 'index',
+          label: this.$t('zapgoals.period_index'),
+          field: 'period_index',
+          align: 'left'
+        },
+        {
+          name: 'start',
+          label: this.$t('zapgoals.period_start'),
+          field: row => this.formatDate(row.period_start),
+          align: 'left'
+        },
+        {
+          name: 'end',
+          label: this.$t('zapgoals.period_end'),
+          field: row => this.formatDate(row.period_end),
+          align: 'left'
+        },
+        {
+          name: 'zapped',
+          label: this.$t('zapgoals.period_zapped'),
+          field: row => this.formatSats(row.zapped_total),
+          align: 'right'
+        },
+        {
+          name: 'moved',
+          label: this.$t('zapgoals.period_moved'),
+          field: row => this.formatSats(row.moved_to_target),
+          align: 'right'
+        },
+        {
+          name: 'rollover',
+          label: this.$t('zapgoals.period_rollover'),
+          field: row => this.formatSats(row.rollover),
+          align: 'right'
+        },
+        {
+          name: 'swept_at',
+          label: this.$t('zapgoals.period_swept_at'),
+          field: row => this.formatDate(row.swept_at),
+          align: 'left'
+        }
+      ]
     }
   }
 }
