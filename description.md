@@ -14,6 +14,8 @@ Supporters can contribute through Bitcoin Connect or standard BOLT11 invoices an
 - LNURL-pay endpoints and optional per-goal Lightning Addresses
 - NIP-57 zap request validation and signed zap receipt publication
 - Safe cancellation of partially funded goals without deleting LNbits payment history
+- Recurring goals with period-end sweeps, rollover modes, and a per-period ledger (daily, weekly, monthly, quarterly, semi-annual, or annual cycles)
+- Embeddable goal card via JS widget (Shadow DOM) or iframe for external websites
 
 Lightning Addresses require the ZapGoals well-known redirect to be enabled at the server and cannot share that route with another Lightning Address extension. Nostr zaps require the recipient's 64-character hexadecimal public key. See the [setup guide](https://github.com/bitkarrot/zapgoals#lightning-address-and-nostr-setup) for details.
 

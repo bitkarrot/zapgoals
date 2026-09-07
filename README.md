@@ -71,6 +71,8 @@ Routes are mounted below the extension's `/zapgoals` prefix:
 - `POST /zapgoals/api/v1/goals/{goal_id}/sweep` manually triggers a period-end sweep for a recurring goal (admin key).
 - `POST /zapgoals/api/v1/recurring/sweep-due` sweeps all due recurring goals owned by the wallet (admin key). Intended as the scheduler target.
 - `GET /zapgoals/api/v1/goals/{goal_id}/periods` returns the per-period ledger for a recurring goal (invoice key).
+- `GET /zapgoals/api/v1/recurring/scheduler-status` reports which sweep trigger methods are active (admin key).
+- `POST /zapgoals/api/v1/recurring/setup-scheduler` auto-creates a scheduler extension cron job for hourly sweeps (admin key).
 - `/api/v1/ws/{goal_id}` is the LNbits core WebSocket used as a realtime invalidation signal; clients should re-fetch the public endpoint after a message.
 
 Authenticated goal management routes are listed in the running instance's OpenAPI schema. Goal and direct invoice amounts use satoshis; LNURL callback amounts use millisatoshis; target dates are normalized to UTC. Public invoices expire after 10 minutes, expired unpaid tracking rows are removed during subsequent invoice creation, and requests remain subject to the LNbits server-wide rate limit.
@@ -82,7 +84,7 @@ A recurring goal reuses the same goal ID, public URL, LNURL endpoint, and Lightn
 ### Setup
 
 1. Create a goal and enable the **Recurring goal** toggle.
-2. Choose a recurrence unit (daily, weekly, or monthly) and interval (e.g. every 1 month).
+2. Choose a recurrence unit (daily, weekly, monthly, quarterly, semi-annual, or annual) and interval (e.g. every 1 month).
 3. For monthly recurrence, optionally set a day of month (clamped to the last day of short months).
 4. Select a **target wallet** — an internal LNbits wallet on the same instance that will receive swept sats via a feeless internal transfer.
 5. Choose a **sweep mode**:
