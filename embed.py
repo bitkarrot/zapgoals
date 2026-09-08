@@ -202,7 +202,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
       + '📅 <span>'+formatDate(goal.target_date)+'</span>'
       + '<div style="font-weight:700;margin-top:.25rem">'+escapeHtml(countdown)+'</div></div>';
 
-    if(goal.recurring){
+    if(goal.recurring && goal.show_period_badge !== false){
       html += '<div class="zg-recurring">'
         + '<span class="zg-recurring-badge">🔄 Period '+(goal.period_index+1)+'</span></div>';
     }
@@ -567,7 +567,7 @@ WIDGET_JS = """
     html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')+'"><div class="zg-progress-fill" style="width:'+capped+'%;background:'+(goal.progress_color||'#f59e0b')+'"></div><span class="zg-percent">'+pctLabel+'</span></div>';
     html += '<div class="zg-amounts" style="font-weight:'+fw+'"><span>Current '+formatSats(goal.current_amount)+'</span><span>Goal '+formatSats(goal.goal_amount)+'</span></div>';
     html += '<div class="zg-target" style="font-weight:'+fw+'">\\ud83d\\udcc5 <span>'+formatDate(goal.target_date)+'</span><div style="font-weight:700;margin-top:.25rem">'+escapeHtml(countdown)+'</div></div>';
-    if(goal.recurring) html += '<div class="zg-recurring"><span class="zg-recurring-badge">\\ud83d\\udd04 Period '+(goal.period_index+1)+'</span></div>';
+    if(goal.recurring && goal.show_period_badge !== false) html += '<div class="zg-recurring"><span class="zg-recurring-badge">\\ud83d\\udd04 Period '+(goal.period_index+1)+'</span></div>';
     if(goal.description_below) html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_below)+'</p>';
     html += '<button class="zg-zap-btn" style="background:'+btnColor+';color:'+btnText+'">\\u26a1 Zap this goal</button>';
     if(goal.lightning_address||goal.nostr_pubkey) html += '<div class="zg-separator"></div>';

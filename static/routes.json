@@ -2,15 +2,15 @@
   {
     "path": "/zapgoals/",
     "name": "PageZapGoals",
-    "template": "/zapgoals/static/js/index.vue",
-    "component": "/zapgoals/static/js/index.js",
+    "template": "/zapgoals/static/js/index.vue?rev=0.1.6",
+    "component": "/zapgoals/static/js/index.js?rev=0.1.6",
     "i18n": "/zapgoals/static/js/i18n"
   },
   {
     "path": "/zapgoals/:id",
     "name": "PageZapGoalsPublic",
-    "template": "/zapgoals/static/js/public.vue?rev=20260908-payment-modal",
-    "component": "/zapgoals/static/js/public.js?rev=20260908-payment-modal",
+    "template": "/zapgoals/static/js/public.vue?rev=0.1.6",
+    "component": "/zapgoals/static/js/public.js?rev=0.1.6",
     "i18n": "/zapgoals/static/js/i18n"
   }
 ]

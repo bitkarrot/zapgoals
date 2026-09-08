@@ -150,6 +150,7 @@ window.PageZapGoals = {
         lightning_address_username: null,
         current_amount: 0,
         recurring: false,
+        show_period_badge: true,
         recurrence_unit: 'month',
         recurrence_interval: 1,
         recurrence_day_of_month: null,
@@ -208,6 +209,7 @@ window.PageZapGoals = {
               font_name: goal.font_name || goal.font_family || 'sans-serif',
               font_weight: Number(goal.font_weight) || 400,
               recurring: goal.recurring || false,
+              show_period_badge: goal.show_period_badge !== false,
               recurrence_unit: goal.recurrence_unit || 'month',
               recurrence_interval: goal.recurrence_interval || 1,
               recurrence_day_of_month: goal.recurrence_day_of_month || null,
@@ -322,6 +324,7 @@ window.PageZapGoals = {
         lightning_address_username:
           data.lightning_address_username?.trim().toLowerCase() || null,
         recurring: data.recurring || false,
+        show_period_badge: data.show_period_badge !== false,
         recurrence_unit: data.recurring ? data.recurrence_unit : null,
         recurrence_interval: Number(data.recurrence_interval) || 1,
         recurrence_day_of_month:

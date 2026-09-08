@@ -289,7 +289,7 @@ const test = base.extend({
       expect(
         network.scripts[0],
         'Extension revision must survive LNbits overriding v'
-      ).toContain('rev=20260908-payment-modal')
+      ).toContain('rev=0.1.6')
     }
     expect(
       network.blocked,

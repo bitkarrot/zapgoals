@@ -96,6 +96,12 @@ A recurring goal reuses the same goal ID, public URL, LNURL endpoint, and Lightn
 
 The goal's receiving wallet should be **dedicated** to that recurring goal. The sweep moves sats from the goal wallet's actual balance, so if the wallet is shared or has manual withdrawals, the sweep will fail with an insufficient balance error rather than silently underpaying.
 
+### Public period badge
+
+To hide the **Period 3** label (or any current period number), edit the goal and turn off **Show period number on public page** in the **Recurring goal** section, then save. This preference is saved per goal and applies to the public page and both embed types. It only changes the badge's visibility: recurring schedules, sweeps, accounting, and admin period history are unchanged.
+
+The badge stays visible by default for new and existing goals. The owner and public APIs expose the boolean `show_period_badge` setting.
+
 ### Example
 
 A monthly goal with a 10,000 sat target and `target_amount` sweep mode receives 10,200 sats in January. At period end:
@@ -152,7 +158,7 @@ Renders the goal in an iframe. Simpler but Bitcoin Connect may not work due to b
 
 ### What the embed shows
 
-Both methods display the same content as the public page: goal title, descriptions, progress bar with live updates, current/goal amounts, countdown timer, recurring period badge (if applicable), zap button with suggested amounts, custom amount input, BOLT11 invoice QR code, and Bitcoin Connect (if enabled on the goal). Lightning Address and Nostr badge are also shown when configured.
+Both methods display the same content as the public page: goal title, descriptions, progress bar with live updates, current/goal amounts, countdown timer, recurring period badge (when enabled), zap button with suggested amounts, custom amount input, BOLT11 invoice QR code, and Bitcoin Connect (if enabled on the goal). Lightning Address and Nostr badge are also shown when configured.
 
 ### Technical notes
 

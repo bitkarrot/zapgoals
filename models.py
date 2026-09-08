@@ -85,6 +85,11 @@ class GoalData(BaseModel):
         description="When true, the goal resets on a schedule and sweeps "
         "settled sats to a target wallet at each period end.",
     )
+    show_period_badge: bool = Field(
+        True,
+        description="Show the period number on public pages and embeds. "
+        "Display only; does not change recurring schedules or accounting.",
+    )
     recurrence_unit: RecurrenceUnit | None = Field(
         None, description="Recurrence period unit. Required when recurring."
     )
@@ -252,6 +257,7 @@ class PublicGoal(BaseModel):
     lightning_address: str | None = None
     nostr_pubkey: str | None = None
     recurring: bool = False
+    show_period_badge: bool = True
     period_index: int = 0
     period_start: datetime | None = None
     last_swept_at: datetime | None = None

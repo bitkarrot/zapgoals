@@ -177,6 +177,7 @@ def public_goal(goal: Goal, request: Request) -> PublicGoal:
         lightning_address=address,
         nostr_pubkey=goal.nostr_pubkey,
         recurring=goal.recurring,
+        show_period_badge=goal.show_period_badge,
         period_index=goal.period_index,
         period_start=goal.period_start,
         last_swept_at=goal.last_swept_at,

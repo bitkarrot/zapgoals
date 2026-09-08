@@ -138,6 +138,9 @@ window.i18n.global.mergeLocaleMessage('en', {
     period_swept_at: 'Swept at',
     no_periods: 'No periods swept yet.',
     recurring_badge: 'Recurring',
+    show_period_badge: 'Show period number on public page',
+    show_period_badge_hint:
+      'Hide the period badge on public pages and embeds without changing the recurring schedule or period history.',
     period_label: 'Period {index}',
     sweep_trigger: 'Automatic sweep trigger',
     sweep_trigger_hint:

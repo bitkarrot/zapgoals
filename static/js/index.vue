@@ -490,6 +490,14 @@
                 v-text="$t('zapgoals.recurring_hint')"
               ></div>
               <div v-if="formDialog.data.recurring">
+                <q-toggle
+                  v-model="formDialog.data.show_period_badge"
+                  :label="$t('zapgoals.show_period_badge')"
+                ></q-toggle>
+                <div
+                  class="text-body2 text-grey-6 q-mb-md"
+                  v-text="$t('zapgoals.show_period_badge_hint')"
+                ></div>
                 <q-banner rounded class="bg-grey-2 text-dark q-mb-md">
                   <div
                     class="text-subtitle2 q-mb-xs"

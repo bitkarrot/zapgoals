@@ -73,7 +73,10 @@
             <div class="text-weight-bold q-mt-xs" v-text="countdownLabel"></div>
           </div>
 
-          <div v-if="goal.recurring" class="text-center q-mb-lg">
+          <div
+            v-if="goal.recurring && goal.show_period_badge !== false"
+            class="text-center q-mb-lg"
+          >
             <q-badge color="teal" class="q-pa-sm">
               <q-icon
                 name="autorenew"

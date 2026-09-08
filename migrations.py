@@ -140,3 +140,10 @@ async def m004_recurring(db):
     await db.execute(
         f"CREATE INDEX zapgoals_periods_goal_idx ON {table} (goal_id, period_index)"
     )
+
+
+async def m005_public_period_badge(db):
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN show_period_badge BOOLEAN NOT NULL DEFAULT TRUE
+        """)
