@@ -50,6 +50,13 @@ window.PageZapGoals = {
       sweeping: false,
       schedulerStatus: null,
       settingUpScheduler: false,
+      schedulerFrequency: 'daily',
+      schedulerFrequencyOptions: [
+        {label: 'Hourly check', value: 'hourly'},
+        {label: 'Every six hours', value: 'six_hourly'},
+        {label: 'Daily check', value: 'daily'},
+        {label: 'Weekly check', value: 'weekly'}
+      ],
       embedDialog: {show: false, type: 'widget', snippet: ''}
     }
   },
@@ -225,9 +232,19 @@ window.PageZapGoals = {
           wallet.inkey
         )
         this.schedulerStatus = data
+        if (data.scheduler_frequency) {
+          this.schedulerFrequency = data.scheduler_frequency
+        }
       } catch (error) {
         this.schedulerStatus = null
       }
+    },
+    schedulerFrequencyLabel() {
+      return (
+        this.schedulerFrequencyOptions.find(
+          option => option.value === this.schedulerFrequency
+        )?.label || this.schedulerFrequency
+      ).toLowerCase()
     },
     async setupSchedulerJob() {
       const wallet = this.walletFor(this.formDialog.data.wallet)
@@ -237,12 +254,16 @@ window.PageZapGoals = {
         const {data} = await LNbits.api.request(
           'POST',
           '/zapgoals/api/v1/recurring/setup-scheduler',
-          wallet.adminkey
+          wallet.adminkey,
+          {frequency: this.schedulerFrequency}
         )
         if (data.success) {
           Quasar.Notify.create({
             type: 'positive',
-            message: this.$t('zapgoals.setup_scheduler_success'),
+            message: this.$t('zapgoals.setup_scheduler_success', {
+              frequency: this.schedulerFrequencyLabel(),
+              action: data.action
+            }),
             icon: null
           })
           await this.fetchSchedulerStatus()

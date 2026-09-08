@@ -72,7 +72,7 @@ Routes are mounted below the extension's `/zapgoals` prefix:
 - `POST /zapgoals/api/v1/recurring/sweep-due` sweeps all due recurring goals owned by the wallet (admin key). Intended as the scheduler target.
 - `GET /zapgoals/api/v1/goals/{goal_id}/periods` returns the per-period ledger for a recurring goal (invoice key).
 - `GET /zapgoals/api/v1/recurring/scheduler-status` reports which sweep trigger methods are active (admin key).
-- `POST /zapgoals/api/v1/recurring/setup-scheduler` auto-creates a scheduler extension cron job for hourly sweeps (admin key).
+- `POST /zapgoals/api/v1/recurring/setup-scheduler` creates or updates a scheduler extension job for due-goal checks (admin key). The check frequency can be hourly, every six hours, daily, or weekly.
 - `/api/v1/ws/{goal_id}` is the LNbits core WebSocket used as a realtime invalidation signal; clients should re-fetch the public endpoint after a message.
 
 Authenticated goal management routes are listed in the running instance's OpenAPI schema. Goal and direct invoice amounts use satoshis; LNURL callback amounts use millisatoshis; target dates are normalized to UTC. Public invoices expire after 10 minutes, expired unpaid tracking rows are removed during subsequent invoice creation, and requests remain subject to the LNbits server-wide rate limit.
@@ -109,9 +109,9 @@ If only 7,000 sats were zapped, `min(7000, 10000) = 7000` is moved and nothing r
 
 Sweeps are triggered automatically by sending an HTTP request to the `sweep-due` endpoint. Two options:
 
-**Option A — LNbits scheduler extension (recommended):** Install the [scheduler](https://github.com/bitkarrot/scheduler) extension and create a cron job that sends `POST /zapgoals/api/v1/recurring/sweep-due` with an admin key header on an hourly or daily cadence. ZapGoals decides which goals are due.
+**Option A — LNbits scheduler extension (recommended):** Install the [scheduler](https://github.com/bitkarrot/scheduler) extension and create or update a cron job that sends `POST /zapgoals/api/v1/recurring/sweep-due` with an admin key header. ZapGoals decides which goals are due; the check can run hourly, daily, weekly, or monthly. The admin panel's scheduler setup control defaults to a daily check and updates the existing ZapGoals job instead of creating duplicates.
 
-**Option B — Built-in fallback loop:** Set `ZAPGOALS_BUILTIN_SCHEDULER=true` in the LNbits server environment. ZapGoals runs an internal loop that checks for due goals every `ZAPGOALS_SCHEDULER_INTERVAL_SECONDS` seconds (default 3600). No extra extension needed.
+**Option B — Built-in fallback loop:** Set `ZAPGOALS_BUILTIN_SCHEDULER=true` in the LNbits server environment. ZapGoals runs an internal loop that checks for due goals every `ZAPGOALS_SCHEDULER_INTERVAL_SECONDS` seconds (default 3600). Set that variable to change the interval; no extra extension is needed.
 
 Sweeps can also be triggered manually per goal from the ZapGoals admin panel (the sweep button) or via `POST /zapgoals/api/v1/goals/{goal_id}/sweep`.
 

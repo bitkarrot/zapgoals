@@ -141,7 +141,8 @@ window.i18n.global.mergeLocaleMessage('en', {
     period_label: 'Period {index}',
     sweep_trigger: 'Automatic sweep trigger',
     sweep_trigger_hint:
-      'Sweeps run automatically when the period ends. Enable one of the options below.',
+      'The scheduler only checks for goals whose period has ended. Choose how often it checks; it never sweeps a goal early.',
+    scheduler_frequency: 'Automatic check frequency',
     builtin_scheduler_active: 'Built-in scheduler: Active',
     builtin_scheduler_inactive: 'Built-in scheduler: Disabled',
     scheduler_extension_active: 'Scheduler extension: Installed',
@@ -149,7 +150,9 @@ window.i18n.global.mergeLocaleMessage('en', {
     scheduler_job_exists: 'Scheduler job: Configured',
     scheduler_job_missing: 'Scheduler job: Not configured',
     setup_scheduler: 'Set up scheduler job',
-    setup_scheduler_success: 'Scheduler job created. Sweeps will run hourly.',
+    update_scheduler: 'Update scheduler job',
+    setup_scheduler_success:
+      'Scheduler job {action}. It will check for due goals {frequency}.',
     setup_scheduler_failed: 'Could not create scheduler job: {detail}',
     target_date_recurring: 'First period end date',
     target_date_recurring_hint:

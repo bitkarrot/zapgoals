@@ -29,6 +29,19 @@ FONT_NAMES = {
 FONT_WEIGHTS = {400, 600, 700, 800}
 
 
+SchedulerFrequency = Literal["hourly", "six_hourly", "daily", "weekly"]
+SCHEDULER_CRONS = {
+    "hourly": "0 * * * *",
+    "six_hourly": "0 */6 * * *",
+    "daily": "0 0 * * *",
+    "weekly": "0 0 * * 0",
+}
+
+
+class SchedulerSetupData(BaseModel):
+    frequency: SchedulerFrequency = "daily"
+
+
 class WalletMode(str, Enum):
     vanilla = "vanilla"
     all = "all"

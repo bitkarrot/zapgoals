@@ -499,6 +499,19 @@
                     class="text-body2 text-grey-7 q-mb-sm"
                     v-text="$t('zapgoals.sweep_trigger_hint')"
                   ></div>
+                  <div class="row q-col-gutter-sm items-center q-mb-sm">
+                    <div class="col-12 col-sm-6">
+                      <q-select
+                        dense
+                        filled
+                        emit-value
+                        map-options
+                        v-model="schedulerFrequency"
+                        :options="schedulerFrequencyOptions"
+                        :label="$t('zapgoals.scheduler_frequency')"
+                      ></q-select>
+                    </div>
+                  </div>
                   <div class="q-gutter-y-xs">
                     <div class="row items-center">
                       <q-icon
@@ -577,14 +590,20 @@
                         "
                       ></span>
                       <q-btn
-                        v-if="!schedulerStatus.scheduler_job_exists"
+                        v-if="
+                          schedulerStatus && schedulerStatus.scheduler_extension
+                        "
                         flat
                         dense
                         no-caps
                         color="primary"
                         size="sm"
                         icon="schedule"
-                        :label="$t('zapgoals.setup_scheduler')"
+                        :label="
+                          schedulerStatus.scheduler_job_exists
+                            ? $t('zapgoals.update_scheduler')
+                            : $t('zapgoals.setup_scheduler')
+                        "
                         :loading="settingUpScheduler"
                         @click="setupSchedulerJob"
                         class="q-ml-sm"

@@ -29,6 +29,8 @@ from .models import (
     InvoiceResponse,
     Period,
     PublicGoal,
+    SchedulerSetupData,
+    SCHEDULER_CRONS,
     SweepError,
 )
 from .services import (
@@ -51,6 +53,39 @@ def _not_found():
 def _check_owner(goal: Goal, wallet: WalletTypeInfo) -> None:
     if goal.wallet != wallet.wallet.id:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail="Not your goal")
+def _scheduler_jobs(payload) -> list[dict]:
+    if isinstance(payload, list):
+        return [job for job in payload if isinstance(job, dict)]
+    if isinstance(payload, dict):
+        for key in ("data", "items", "results"):
+            jobs = payload.get(key)
+            if isinstance(jobs, list):
+                return [job for job in jobs if isinstance(job, dict)]
+    return []
+
+
+def _scheduler_frequency(schedule: str | None) -> str | None:
+    for frequency, cron in SCHEDULER_CRONS.items():
+        if schedule == cron:
+            return frequency
+    return None
+
+
+def _scheduler_job(jobs: list[dict]) -> dict | None:
+    return next(
+        (
+            job
+            for job in jobs
+            if str(job.get("url", "")).endswith(
+                "/zapgoals/api/v1/recurring/sweep-due"
+            )
+            or (
+                "zapgoals" in str(job.get("name", "")).lower()
+                and "zapgoalswasm" not in str(job.get("url", ""))
+            )
+        ),
+        None,
+    )
 
 
 @zapgoals_api_router.get(
@@ -324,12 +359,18 @@ async def api_sweep_due(
 async def api_scheduler_status(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ) -> dict:
-    from .settings import builtin_scheduler_enabled
+    from .settings import (
+        builtin_scheduler_enabled,
+        builtin_scheduler_interval_seconds,
+    )
 
     status: dict = {
         "builtin_scheduler": builtin_scheduler_enabled,
+        "builtin_scheduler_interval_seconds": builtin_scheduler_interval_seconds,
         "scheduler_extension": False,
         "scheduler_job_exists": False,
+        "scheduler_frequency": None,
+        "scheduler_job_id": None,
     }
     try:
         import httpx
@@ -342,12 +383,12 @@ async def api_scheduler_status(
             )
             if resp.status_code == 200:
                 status["scheduler_extension"] = True
-                jobs = resp.json()
-                if isinstance(jobs, list):
-                    status["scheduler_job_exists"] = any(
-                        "zapgoals" in (j.get("name") or "").lower()
-                        or "sweep-due" in (j.get("url") or "")
-                        for j in jobs
+                job = _scheduler_job(_scheduler_jobs(resp.json()))
+                if job:
+                    status["scheduler_job_exists"] = True
+                    status["scheduler_job_id"] = job.get("id")
+                    status["scheduler_frequency"] = _scheduler_frequency(
+                        job.get("schedule")
                     )
     except Exception:
         pass
@@ -359,37 +400,64 @@ async def api_scheduler_status(
     response_model=dict,
     summary="Create a scheduler extension job for recurring sweeps",
     description=(
-        "Creates a cron job in the LNbits scheduler extension that fires "
-        "POST /zapgoals/api/v1/recurring/sweep-due hourly. Requires the "
-        "scheduler extension to be installed."
+        "Creates or updates a scheduler extension cron job that checks for "
+        "due goals. The check frequency can be hourly, every six hours, "
+        "daily, or weekly; goals are only swept after their configured period ends. "
+        "Requires the scheduler extension to be installed."
     ),
 )
 async def api_setup_scheduler(
+    data: SchedulerSetupData,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> dict:
     import httpx
 
+    schedule = SCHEDULER_CRONS[data.frequency]
+    payload = {
+        "name": "ZapGoals recurring sweep",
+        "status": True,
+        "selectedverb": "POST",
+        "url": "http://localhost:5000/zapgoals/api/v1/recurring/sweep-due",
+        "headers": [{"key": "X-Api-Key", "value": wallet.wallet.adminkey}],
+        "body": "",
+        "schedule": schedule,
+        "extra": None,
+    }
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.post(
+            jobs_response = await client.get(
                 "http://localhost:5000/scheduler/api/v1/jobs",
                 headers={"X-Api-Key": wallet.wallet.adminkey},
-                json={
-                    "name": "ZapGoals recurring sweep",
-                    "status": True,
-                    "selectedverb": "POST",
-                    "url": "http://localhost:5000/zapgoals/api/v1/recurring/sweep-due",
-                    "headers": [
-                        {"key": "X-Api-Key", "value": wallet.wallet.adminkey}
-                    ],
-                    "body": "",
-                    "schedule": "0 * * * *",
-                    "extra": None,
-                },
                 timeout=10,
             )
+            existing = None
+            if jobs_response.status_code == 200:
+                existing = _scheduler_job(_scheduler_jobs(jobs_response.json()))
+
+            if existing:
+                payload["id"] = existing["id"]
+                resp = await client.put(
+                    f"http://localhost:5000/scheduler/api/v1/jobs/{existing['id']}",
+                    headers={"X-Api-Key": wallet.wallet.adminkey},
+                    json=payload,
+                    timeout=10,
+                )
+                action = "updated"
+            else:
+                resp = await client.post(
+                    "http://localhost:5000/scheduler/api/v1/jobs",
+                    headers={"X-Api-Key": wallet.wallet.adminkey},
+                    json=payload,
+                    timeout=10,
+                )
+                action = "created"
             if resp.status_code in (200, 201):
-                return {"success": True, "job": resp.json()}
+                return {
+                    "success": True,
+                    "action": action,
+                    "frequency": data.frequency,
+                    "job": resp.json(),
+                }
             return {
                 "success": False,
                 "detail": f"Scheduler returned {resp.status_code}: {resp.text}",
