@@ -125,9 +125,12 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
   }
 
   function escapeHtml(s){
-    var d = document.createElement('div');
-    d.textContent = s || '';
-    return d.innerHTML;
+    return String(s || '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
   }
 
   function formatSats(v){
@@ -220,13 +223,17 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     if(goal.lightning_address){
       html += '<div class="zg-lnaddr" style="font-weight:'+fw+'">'
         + '✉ <span>'+escapeHtml(goal.lightning_address)+'</span>'
-        + '<button class="zg-copy-btn" onclick="window.__zgCopy(\\''+goal.lightning_address+'\\')">📋</button></div>';
+        + '<button class="zg-copy-btn" data-copy="'+escapeHtml(goal.lightning_address)+'">📋</button></div>';
     }
     if(goal.nostr_pubkey){
       html += '<div class="zg-nostr" style="font-weight:'+fw+'">⚡ Nostr zaps are enabled for this goal.</div>';
     }
 
     card.innerHTML = html;
+    var copyBtns = card.querySelectorAll('[data-copy]');
+    copyBtns.forEach(function(b){
+      b.addEventListener('click', function(){ copyText(b.getAttribute('data-copy')); });
+    });
     sendHeight();
   }
 
@@ -346,7 +353,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
       + '<button class="zg-close" onclick="window.__zgCloseDialog()">×</button></div>';
     html += '<div class="zg-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=LIGHTNING:'+encodeURIComponent(invoice.payment_request.toUpperCase())+'" alt="QR code"></div>';
     html += '<div class="zg-invoice-box"><textarea class="zg-invoice-text" readonly rows="3">'+escapeHtml(invoice.payment_request)+'</textarea></div>';
-    html += '<div style="text-align:center;margin-top:.75rem"><button class="zg-copy-btn" onclick="window.__zgCopy(\\''+invoice.payment_request+'\\')">📋 Copy invoice</button></div>';
+    html += '<div style="text-align:center;margin-top:.75rem"><button class="zg-copy-btn" data-copy="'+escapeHtml(invoice.payment_request)+'">📋 Copy invoice</button></div>';
     if(goal.wallet_mode === 'all'){
       html += '<div style="text-align:center;margin-top:.5rem;font-size:.85rem;color:#666">'
         + 'Wallet payment unavailable in embed? '
@@ -354,6 +361,10 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     }
 
     dialog.innerHTML = html;
+    var copyBtn = dialog.querySelector('[data-copy]');
+    if(copyBtn) copyBtn.addEventListener('click', function(){
+      copyText(copyBtn.getAttribute('data-copy'));
+    });
     overlay.classList.add('show');
   }
 
@@ -421,7 +432,6 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
   window.__zgCustomAmount = function(v){ amount = Number(v) || null; var el = document.getElementById('zg-selected-val'); if(el) el.textContent = v ? Number(v).toLocaleString() : '—'; var btns = dialog.querySelectorAll('.zg-amt-btn'); btns.forEach(function(b){b.classList.remove('active')}); };
   window.__zgCreateInvoice = createInvoice;
   window.__zgCloseDialog = closeDialog;
-  window.__zgCopy = copyText;
 
   // Init
   getGoal();
@@ -473,7 +483,7 @@ WIDGET_JS = """
       return r.json();
     });
   }
-  function escapeHtml(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+  function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function formatSats(v){return Number(v||0).toLocaleString()+' sats';}
   function formatDate(v){if(!v)return '\\u2014';return new Intl.DateTimeFormat(undefined,{dateStyle:'long',timeStyle:'short'}).format(new Date(v));}
   function contrastColor(hex){hex=String(hex||'').replace('#','');if(!/^[0-9a-f]{6}$/i.test(hex))return '#111827';var r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);var lum=(r*299+g*587+b*114)/1000;return lum>=145?'#111827':'#ffffff';}

@@ -2,9 +2,10 @@ import asyncio
 import ipaddress
 import json
 import secrets
+import socket
 from calendar import monthrange
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse
 
 import websockets
 from fastapi import Request
@@ -263,6 +264,46 @@ async def create_goal_invoice(
     )
 
 
+def _is_shorthand_ip(hostname: str) -> bool:
+    """True for alternate IP notations like 127.1, 2130706433 or 0x7f.1.
+
+    ipaddress.ip_address rejects them, but the OS resolver still maps
+    them to an address, so they must not pass as ordinary hostnames.
+    """
+    try:
+        socket.inet_aton(hostname)
+    except OSError:
+        return False
+    return True
+
+
+def _validated_relay_url(relay: str) -> ParseResult:
+    """String-level relay URL checks shared by validation and publishing."""
+    if not isinstance(relay, str):
+        raise ValueError("Invalid Nostr relay URL")
+    parsed = urlparse(relay)
+    if (
+        parsed.scheme not in {"ws", "wss"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.fragment
+    ):
+        raise ValueError("Invalid Nostr relay URL")
+    hostname = parsed.hostname.lower()
+    if hostname == "localhost" or hostname.endswith((".local", ".internal")):
+        raise ValueError("Invalid Nostr relay URL")
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise ValueError("Invalid Nostr relay URL")
+    if address is None and _is_shorthand_ip(hostname):
+        raise ValueError("Invalid Nostr relay URL")
+    return parsed
+
+
 def validate_zap_request(raw_nostr: str, goal: Goal, amount_msat: int):
     if not goal.nostr_pubkey:
         raise ValueError("This goal does not accept Nostr zaps")
@@ -314,27 +355,7 @@ def validate_zap_request(raw_nostr: str, goal: Goal, amount_msat: int):
         raise ValueError("Zap request must contain between 1 and 10 relays")
     validated = []
     for relay in relays:
-        if not isinstance(relay, str):
-            raise ValueError("Invalid Nostr relay URL")
-        parsed = urlparse(relay)
-        if (
-            parsed.scheme not in {"ws", "wss"}
-            or not parsed.hostname
-            or parsed.username
-            or parsed.password
-            or parsed.fragment
-        ):
-            raise ValueError("Invalid Nostr relay URL")
-        hostname = parsed.hostname.lower()
-        if hostname == "localhost" or hostname.endswith((".local", ".internal")):
-            raise ValueError("Invalid Nostr relay URL")
-        try:
-            address = ipaddress.ip_address(hostname)
-        except ValueError:
-            pass
-        else:
-            if not address.is_global:
-                raise ValueError("Invalid Nostr relay URL")
+        _validated_relay_url(relay)
         validated.append(relay)
     return event, list(dict.fromkeys(validated))
 
@@ -399,8 +420,38 @@ async def publish_zap_receipt(payment: Payment) -> None:
         logger.warning("Could not create zap receipt: {}", str(exc))
 
 
+async def _assert_public_relay(relay: str) -> None:
+    """Re-check a relay URL and its resolved addresses before connecting.
+
+    validate_zap_request runs when an invoice is created; DNS answers can
+    change before that invoice is paid, so every address the relay hostname
+    resolves to is required to be globally routable immediately before the
+    connection is opened.
+    """
+    parsed = _validated_relay_url(relay)
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("Invalid Nostr relay URL")
+    port = parsed.port or (443 if parsed.scheme == "wss" else 80)
+    loop = asyncio.get_running_loop()
+    try:
+        addrinfos = await loop.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+    except OSError as exc:
+        raise ValueError(f"relay hostname does not resolve: {exc}") from exc
+    if not addrinfos:
+        raise ValueError("relay hostname does not resolve")
+    for addrinfo in addrinfos:
+        try:
+            address = ipaddress.ip_address(addrinfo[4][0])
+        except ValueError as exc:
+            raise ValueError("relay resolved to an unparseable address") from exc
+        if not address.is_global:
+            raise ValueError(f"relay resolves to non-global address {address}")
+
+
 async def _publish_to_relay(relay: str, message: str) -> None:
     async def publish() -> None:
+        await _assert_public_relay(relay)
         async with websockets.connect(
             relay, open_timeout=4, close_timeout=1, max_size=262144
         ) as socket:
