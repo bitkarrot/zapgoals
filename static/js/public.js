@@ -13,6 +13,7 @@ window.PageZapGoalsPublic = {
       invoiceDialog: false,
       invoice: null,
       bitcoinConnectPayment: null,
+      paymentState: 'idle',
       goalSocket: null,
       invoiceSocket: null,
       goalReconnectTimer: null,
@@ -122,9 +123,8 @@ window.PageZapGoalsPublic = {
     this.destroyed = true
     window.clearInterval(this.countdownTimer)
     window.clearTimeout(this.goalReconnectTimer)
-    window.clearTimeout(this.invoiceReconnectTimer)
     if (this.goalSocket) this.goalSocket.close()
-    if (this.invoiceSocket) this.invoiceSocket.close()
+    this.closeInvoice()
   },
   methods: {
     async getGoal(silent = false) {
@@ -187,8 +187,24 @@ window.PageZapGoalsPublic = {
       this.amount = Number(amount)
       if (this.walletPayAvailable) await this.createInvoice()
     },
+    async ensureBitcoinConnect() {
+      return import('https://esm.sh/@getalby/bitcoin-connect@3.12.3')
+    },
+    isCurrentInvoice(paymentHash) {
+      return (
+        !this.destroyed &&
+        this.paymentState === 'pending' &&
+        Boolean(paymentHash) &&
+        this.invoice?.payment_hash === paymentHash
+      )
+    },
     async createInvoice() {
-      if (this.creatingInvoice) return
+      if (
+        this.creatingInvoice ||
+        this.paymentState === 'pending' ||
+        this.destroyed
+      )
+        return
       if (!Number.isInteger(Number(this.amount)) || Number(this.amount) < 1) {
         Quasar.Notify.create({
           color: 'grey-10',
@@ -202,9 +218,7 @@ window.PageZapGoalsPublic = {
       let bitcoinConnect = null
       if (this.walletPayAvailable) {
         try {
-          bitcoinConnect = await import(
-            'https://esm.sh/@getalby/bitcoin-connect@3.12.3'
-          )
+          bitcoinConnect = await this.ensureBitcoinConnect()
           bitcoinConnect.init({
             appName: 'ZapGoals',
             showBalance: false,
@@ -222,6 +236,7 @@ window.PageZapGoalsPublic = {
         }
       }
       try {
+        if (this.destroyed) return
         const {data} = await LNbits.api.request(
           'POST',
           `/zapgoals/api/v1/goals/${this.goalId}/invoice`,
@@ -231,18 +246,25 @@ window.PageZapGoalsPublic = {
             comment: this.comment.trim() || null
           }
         )
+        if (this.destroyed) return
         this.invoice = data
+        this.paymentState = 'pending'
         this.amountDialog = false
         this.watchInvoice(data.payment_hash)
+        // Settlement can arrive before the wallet confirmation is opened.
+        if (!this.isCurrentInvoice(data.payment_hash)) return
         if (bitcoinConnect) {
           try {
-            this.bitcoinConnectPayment = bitcoinConnect.launchPaymentModal({
+            // Register cleanup before launch: onPaid/onCancelled may run inline.
+            this.bitcoinConnectPayment = {closeModal: bitcoinConnect.closeModal}
+            bitcoinConnect.launchPaymentModal({
               invoice: data.payment_request,
               paymentMethods: 'all',
-              onPaid: () => this.paymentComplete(),
-              onCancelled: () => this.bitcoinConnectCancelled()
+              onPaid: () => this.paymentComplete(data.payment_hash),
+              onCancelled: () => this.bitcoinConnectCancelled(data.payment_hash)
             })
           } catch (error) {
+            if (!this.isCurrentInvoice(data.payment_hash)) return
             console.error('Bitcoin Connect failed to open', error)
             this.closeInvoice()
             this.amountDialog = true
@@ -262,22 +284,27 @@ window.PageZapGoalsPublic = {
       }
     },
     watchInvoice(paymentHash) {
-      window.clearTimeout(this.invoiceReconnectTimer)
-      if (this.invoiceSocket) this.invoiceSocket.close()
-      if (!paymentHash || this.destroyed) return
+      if (!this.isCurrentInvoice(paymentHash)) return
+      this.stopWatchingInvoice()
       const socket = new WebSocket(
         this.websocketUrl(`/api/v1/ws/${paymentHash}`)
       )
       this.invoiceSocket = socket
       socket.onopen = () => {
+        if (
+          this.invoiceSocket !== socket ||
+          !this.isCurrentInvoice(paymentHash)
+        )
+          return
         this.invoiceReconnectAttempt = 0
         this.checkInvoiceStatus(paymentHash)
       }
       socket.onmessage = event => {
+        if (this.invoiceSocket !== socket) return
         try {
           const message = JSON.parse(event.data)
           if (message.pending === false && message.status === 'success') {
-            this.markPaymentComplete()
+            this.markPaymentComplete(paymentHash)
           }
         } catch (_) {}
       }
@@ -285,7 +312,7 @@ window.PageZapGoalsPublic = {
       socket.onclose = () => {
         if (this.invoiceSocket !== socket) return
         this.invoiceSocket = null
-        if (this.destroyed || !this.invoice) return
+        if (!this.isCurrentInvoice(paymentHash)) return
         const delay = Math.min(10000, 1500 * 2 ** this.invoiceReconnectAttempt)
         this.invoiceReconnectAttempt = Math.min(
           this.invoiceReconnectAttempt + 1,
@@ -298,32 +325,38 @@ window.PageZapGoalsPublic = {
       }
     },
     async checkInvoiceStatus(paymentHash) {
-      if (!paymentHash || this.invoice?.payment_hash !== paymentHash) return
+      if (!this.isCurrentInvoice(paymentHash)) return
       try {
         const {data} = await LNbits.api.request(
           'GET',
           `/api/v1/payments/${paymentHash}`
         )
-        if (data.paid === true) this.markPaymentComplete()
+        if (data.paid === true) this.markPaymentComplete(paymentHash)
       } catch (_) {}
     },
-    markPaymentComplete() {
-      this.bitcoinConnectPayment = null
-      this.paymentComplete()
+    markPaymentComplete(paymentHash = this.invoice?.payment_hash) {
+      this.paymentComplete(paymentHash)
     },
-    bitcoinConnectCancelled() {
-      if (!this.invoice) return
+    closeBitcoinConnectPayment() {
+      const payment = this.bitcoinConnectPayment
+      this.bitcoinConnectPayment = null
+      // Success is already verified. Never require a preimage or call setPaid(),
+      // which re-enters onPaid and leaves Bitcoin Connect's delayed modal open.
+      payment?.closeModal()
+    },
+    bitcoinConnectCancelled(paymentHash = this.invoice?.payment_hash) {
+      if (!this.isCurrentInvoice(paymentHash)) return
       this.bitcoinConnectPayment = null
       this.closeInvoice()
       this.amountDialog = true
     },
-    paymentComplete() {
-      if (!this.invoice && !this.invoiceDialog) return
-      this.bitcoinConnectPayment = null
+    paymentComplete(paymentHash = this.invoice?.payment_hash) {
+      if (!this.isCurrentInvoice(paymentHash)) return
+      // closeModal can invoke onCancelled synchronously; invalidate it first.
+      this.paymentState = 'paid'
+      this.closeBitcoinConnectPayment()
       this.invoiceDialog = false
-      window.clearTimeout(this.invoiceReconnectTimer)
-      if (this.invoiceSocket) this.invoiceSocket.close()
-      this.invoiceSocket = null
+      this.stopWatchingInvoice()
       this.invoice = null
       this.amount = null
       this.comment = ''
@@ -334,11 +367,19 @@ window.PageZapGoalsPublic = {
       })
       this.getGoal(true)
     },
-    closeInvoice() {
+    stopWatchingInvoice() {
       window.clearTimeout(this.invoiceReconnectTimer)
-      if (this.invoiceSocket) this.invoiceSocket.close()
+      this.invoiceReconnectTimer = null
+      const socket = this.invoiceSocket
       this.invoiceSocket = null
+      if (socket) socket.close()
+    },
+    closeInvoice() {
+      this.paymentState = 'idle'
+      this.closeBitcoinConnectPayment()
+      this.stopWatchingInvoice()
       this.invoice = null
+      this.invoiceDialog = false
     },
     contrastColor(value) {
       const hex = String(value || '').replace('#', '')

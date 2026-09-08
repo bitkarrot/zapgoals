@@ -9,8 +9,8 @@
   {
     "path": "/zapgoals/:id",
     "name": "PageZapGoalsPublic",
-    "template": "/zapgoals/static/js/public.vue",
-    "component": "/zapgoals/static/js/public.js",
+    "template": "/zapgoals/static/js/public.vue?rev=20260908-payment-modal",
+    "component": "/zapgoals/static/js/public.js?rev=20260908-payment-modal",
     "i18n": "/zapgoals/static/js/i18n"
   }
 ]

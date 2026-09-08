@@ -225,7 +225,11 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="invoiceDialog" position="top" @hide="closeInvoice">
+    <q-dialog
+      v-model="invoiceDialog"
+      position="top"
+      @before-hide="closeInvoice"
+    >
       <q-card v-if="invoice" class="q-pa-lg lnbits__dialog-card">
         <div
           class="text-h6 text-center"
