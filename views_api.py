@@ -71,21 +71,22 @@ def _scheduler_frequency(schedule: str | None) -> str | None:
     return None
 
 
+def _scheduler_jobs_matching(jobs: list[dict]) -> list[dict]:
+    return [
+        job
+        for job in jobs
+        if str(job.get("url", "")).endswith(
+            "/zapgoals/api/v1/recurring/sweep-due"
+        )
+        or (
+            "zapgoals" in str(job.get("name", "")).lower()
+            and "zapgoalswasm" not in str(job.get("url", ""))
+        )
+    ]
+
+
 def _scheduler_job(jobs: list[dict]) -> dict | None:
-    return next(
-        (
-            job
-            for job in jobs
-            if str(job.get("url", "")).endswith(
-                "/zapgoals/api/v1/recurring/sweep-due"
-            )
-            or (
-                "zapgoals" in str(job.get("name", "")).lower()
-                and "zapgoalswasm" not in str(job.get("url", ""))
-            )
-        ),
-        None,
-    )
+    return next(iter(_scheduler_jobs_matching(jobs)), None)
 
 
 @zapgoals_api_router.get(
@@ -431,8 +432,20 @@ async def api_setup_scheduler(
                 timeout=10,
             )
             existing = None
+            duplicates = []
             if jobs_response.status_code == 200:
-                existing = _scheduler_job(_scheduler_jobs(jobs_response.json()))
+                matching = _scheduler_jobs_matching(
+                    _scheduler_jobs(jobs_response.json())
+                )
+                existing = matching[0] if matching else None
+                duplicates = matching[1:]
+
+            for duplicate in duplicates:
+                await client.delete(
+                    f"http://localhost:5000/scheduler/api/v1/jobs/{duplicate['id']}",
+                    headers={"X-Api-Key": wallet.wallet.adminkey},
+                    timeout=10,
+                )
 
             if existing:
                 payload["id"] = existing["id"]
