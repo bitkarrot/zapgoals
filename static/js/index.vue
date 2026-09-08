@@ -498,7 +498,10 @@
                   class="text-body2 text-grey-6 q-mb-md"
                   v-text="$t('zapgoals.show_period_badge_hint')"
                 ></div>
-                <q-banner rounded class="bg-grey-2 text-dark q-mb-md">
+                <q-banner
+                  rounded
+                  class="bg-grey-2 text-dark zapgoals-scheduler-banner q-mb-md"
+                >
                   <div
                     class="text-subtitle2 q-mb-xs"
                     v-text="$t('zapgoals.sweep_trigger')"
@@ -512,6 +515,7 @@
                       <q-select
                         dense
                         filled
+                        :dark="false"
                         emit-value
                         map-options
                         v-model="schedulerFrequency"
@@ -929,5 +933,22 @@
   z-index: 1;
   font-weight: 700;
   color: inherit;
+}
+.body--dark .zapgoals-scheduler-banner .q-field__native,
+.body--dark .zapgoals-scheduler-banner .q-field__prefix,
+.body--dark .zapgoals-scheduler-banner .q-field__suffix,
+.body--dark .zapgoals-scheduler-banner .q-field__input {
+  color: rgba(0, 0, 0, 0.87);
+}
+.body--dark .zapgoals-scheduler-banner .q-field__label,
+.body--dark .zapgoals-scheduler-banner .q-field__marginal {
+  color: rgba(0, 0, 0, 0.6);
+}
+.body--dark .zapgoals-scheduler-banner .q-field--filled .q-field__control,
+.body--dark
+  .zapgoals-scheduler-banner
+  .q-field--filled
+  .q-field__control:before {
+  background: rgba(0, 0, 0, 0.05);
 }
 </style>
