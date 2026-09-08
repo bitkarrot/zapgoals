@@ -9,13 +9,13 @@
       "id": "zapgoals",
       "repo": "https://github.com/bitkarrot/zapgoals",
       "name": "ZapGoals",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "min_lnbits_version": "1.5.0",
       "short_description": "Create shareable Lightning and Nostr zap funding goals",
       "icon": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/static/image/zapgoals.svg",
       "details_link": "https://raw.githubusercontent.com/bitkarrot/zapgoals/main/config.json",
-      "archive": "https://github.com/bitkarrot/zapgoals/archive/refs/tags/v0.1.7.zip",
-      "hash": "e41daf0d7cbd671607cf5e42320633ad8d41e0bea78724790d0ebd97e65d55ca"
+      "archive": "https://github.com/bitkarrot/zapgoals/archive/refs/tags/v0.1.8.zip",
+      "hash": "8cf8a5ec600ed5cb807f893f8d2a6849dab57c8543e1d8b5f525786343de82c6"
     }
   ]
 }
