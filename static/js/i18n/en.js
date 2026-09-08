@@ -147,7 +147,8 @@ window.i18n.global.mergeLocaleMessage('en', {
       'The scheduler only checks for goals whose period has ended. Choose how often it checks; it never sweeps a goal early.',
     scheduler_frequency: 'Automatic check frequency',
     builtin_scheduler_active: 'Built-in scheduler: Active',
-    builtin_scheduler_inactive: 'Built-in scheduler: Disabled',
+    builtin_scheduler_inactive:
+      'Built-in scheduler: Disabled - set ZAPGOALS_BUILTIN_SCHEDULER=true in the LNbits server environment and restart LNbits to enable it',
     scheduler_extension_active: 'Scheduler extension: Installed',
     scheduler_extension_inactive: 'Scheduler extension: Not installed',
     scheduler_job_exists: 'Scheduler job: Configured',

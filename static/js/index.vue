@@ -500,7 +500,7 @@
                 ></div>
                 <q-banner
                   rounded
-                  class="bg-grey-2 text-dark zapgoals-scheduler-banner q-mb-md"
+                  class="bg-blue-1 text-dark zapgoals-scheduler-banner q-mb-md"
                 >
                   <div
                     class="text-subtitle2 q-mb-xs"
@@ -515,7 +515,6 @@
                       <q-select
                         dense
                         filled
-                        :dark="false"
                         emit-value
                         map-options
                         v-model="schedulerFrequency"
@@ -934,21 +933,14 @@
   font-weight: 700;
   color: inherit;
 }
-.body--dark .zapgoals-scheduler-banner .q-field__native,
-.body--dark .zapgoals-scheduler-banner .q-field__prefix,
-.body--dark .zapgoals-scheduler-banner .q-field__suffix,
-.body--dark .zapgoals-scheduler-banner .q-field__input {
-  color: rgba(0, 0, 0, 0.87);
+.body--dark .q-banner.zapgoals-scheduler-banner {
+  background: #263238 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
-.body--dark .zapgoals-scheduler-banner .q-field__label,
-.body--dark .zapgoals-scheduler-banner .q-field__marginal {
-  color: rgba(0, 0, 0, 0.6);
+.body--dark .zapgoals-scheduler-banner .text-grey-7 {
+  color: #b0bec5 !important;
 }
-.body--dark .zapgoals-scheduler-banner .q-field--filled .q-field__control,
-.body--dark
-  .zapgoals-scheduler-banner
-  .q-field--filled
-  .q-field__control:before {
-  background: rgba(0, 0, 0, 0.05);
+.body--dark .zapgoals-scheduler-banner .text-grey-6 {
+  color: #90a4ae !important;
 }
 </style>
