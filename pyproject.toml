@@ -5,7 +5,7 @@ requires-python = ">=3.10,<3.13"
 description = "LNbits extension for shareable Lightning funding goals."
 authors = [{ name = "bitkarrot" }]
 urls = { Homepage = "https://github.com/bitkarrot/zapgoals", Repository = "https://github.com/bitkarrot/zapgoals" }
-dependencies = ["lnbits~=1.6.0", "qrcode~=8.0"]
+dependencies = ["lnbits~=1.6.0"]
 
 [dependency-groups]
 dev = [
@@ -15,7 +15,6 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "ruff",
-    "types-qrcode",
 ]
 
 [tool.poetry]
@@ -36,6 +35,7 @@ module = [
     "lnurl.*",
     "loguru.*",
     "pynostr.*",
+    "pyqrcode.*",
 ]
 ignore_missing_imports = true
 

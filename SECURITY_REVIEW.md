@@ -4,7 +4,7 @@
 - **Date:** 2026-09-08
 - **Scope:** all server code (`views.py`, `views_api.py`, `crud.py`, `models.py`, `services.py`, `tasks.py`, `migrations.py`, `settings.py`, `__init__.py`), the standalone embeds (`embed.py`), the SPA (`static/js/`), tests, configuration and packaging files.
 - **Method:** manual code review with local reproductions in `tests/test_security_review.py`. No LNbits server, wallet, payment backend, or external relay was contacted.
-- **Fixes shipped:** ZG-01 through ZG-04 are fixed on `main` and first released in v0.1.7.
+- **Fixes shipped:** ZG-01 and ZG-02 in v0.1.7. ZG-03 and ZG-04 in v0.1.8, which also replaces the `qrcode` package that v0.1.7 added — LNbits does not install extension dependencies, so v0.1.7 fails to import on stock LNbits installs and should not be used. QR codes are rendered with `pyqrcode`, a package LNbits itself depends on since 1.5.0.
 
 ## Finding summary
 
@@ -107,7 +107,8 @@ so a CDN or package compromise would have executed on the LNbits origin.
 Fix applied: QR codes are now rendered by a local endpoint,
 `GET /api/v1/qr?data=...`, which only accepts `LIGHTNING:` payloads of up
 to 2000 characters and returns self-contained SVG, so no invoice data leaves
-the host. Bitcoin Connect 3.12.3 is vendored into
+the host. The endpoint uses `pyqrcode`, which LNbits itself depends on, so
+no new Python packages are required. Bitcoin Connect 3.12.3 is vendored into
 `static/js/vendor/bitcoin-connect.bundle.mjs` (the esm.sh bundle of the npm
 package, sha256
 `e81c96d021b0af6ddffc37595eebfac83d78672572258aab28917993a61827cc`, with its

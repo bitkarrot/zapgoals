@@ -1,8 +1,7 @@
 from http import HTTPStatus
+from io import BytesIO
 
-import qrcode
-import qrcode.constants
-import qrcode.image.svg
+import pyqrcode
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from lnbits.core.models import WalletTypeInfo
 from lnbits.decorators import require_admin_key, require_invoice_key
@@ -342,12 +341,11 @@ def api_qr(
             status_code=HTTPStatus.BAD_REQUEST,
             detail="Only LIGHTNING: QR payloads are supported",
         )
-    code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M)
-    code.add_data(payload)
-    code.make(fit=True)
-    image = code.make_image(image_factory=qrcode.image.svg.SvgPathImage)
+    code = pyqrcode.create(payload, error="M")
+    stream = BytesIO()
+    code.svg(stream, scale=4)
     return Response(
-        content=image.to_string(),
+        content=stream.getvalue(),
         media_type="image/svg+xml",
         headers={"Cache-Control": "public, max-age=600"},
     )
