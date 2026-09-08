@@ -202,8 +202,9 @@ window.PageZapGoalsPublic = {
       let bitcoinConnect = null
       if (this.walletPayAvailable) {
         try {
-          bitcoinConnect =
-            await import('https://esm.sh/@getalby/bitcoin-connect@3.12.3')
+          bitcoinConnect = await import(
+            'https://esm.sh/@getalby/bitcoin-connect@3.12.3'
+          )
           bitcoinConnect.init({
             appName: 'ZapGoals',
             showBalance: false,
@@ -307,12 +308,7 @@ window.PageZapGoalsPublic = {
       } catch (_) {}
     },
     markPaymentComplete() {
-      if (this.bitcoinConnectPayment?.setPaid) {
-        const payment = this.bitcoinConnectPayment
-        this.bitcoinConnectPayment = null
-        payment.setPaid({preimage: ''})
-        return
-      }
+      this.bitcoinConnectPayment = null
       this.paymentComplete()
     },
     bitcoinConnectCancelled() {
