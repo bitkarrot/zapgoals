@@ -31,3 +31,7 @@ already exist in the LNbits environment, or the extension fails to import
    and compute its sha256 — GitHub tag zips are what LNbits downloads.
 4. Update `version`, `archive`, `hash` in `extensions.json`; commit
    "Publish ZapGoals vX.Y.Z in extension manifest"; push.
+5. Create the GitHub release object (`gh release create vX.Y.Z -R
+   bitkarrot/zapgoals --title "ZapGoals vX.Y.Z" --notes-file ...`) in the
+   house notes style (New / Fixes / Upgrade / Verification). Tags alone do
+   not show up on the repo's Releases page.
