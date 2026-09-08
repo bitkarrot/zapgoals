@@ -1,5 +1,8 @@
 from http import HTTPStatus
 
+import qrcode
+import qrcode.constants
+import qrcode.image.svg
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from lnbits.core.models import WalletTypeInfo
 from lnbits.decorators import require_admin_key, require_invoice_key
@@ -23,6 +26,7 @@ from .crud import (
 )
 from .models import (
     MAX_SATS,
+    SCHEDULER_CRONS,
     Goal,
     GoalData,
     InvoiceRequest,
@@ -30,9 +34,9 @@ from .models import (
     Period,
     PublicGoal,
     SchedulerSetupData,
-    SCHEDULER_CRONS,
     SweepError,
 )
+from .ratelimit import WindowRateLimiter
 from .services import (
     COMMENT_ALLOWED,
     create_goal_invoice,
@@ -42,8 +46,17 @@ from .services import (
     sweep_recurring_goal,
     validate_zap_request,
 )
+from .settings import invoice_rate_limit_per_minute
 
 zapgoals_api_router = APIRouter(prefix="/api/v1")
+
+_invoice_limiter = WindowRateLimiter(invoice_rate_limit_per_minute)
+
+
+def _rate_limit_key(request: Request, goal_id: str) -> str:
+    client = request.client
+    host = client.host if client else "unknown"
+    return f"{host}:{goal_id}"
 
 
 def _not_found():
@@ -53,6 +66,8 @@ def _not_found():
 def _check_owner(goal: Goal, wallet: WalletTypeInfo) -> None:
     if goal.wallet != wallet.wallet.id:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail="Not your goal")
+
+
 def _scheduler_jobs(payload) -> list[dict]:
     if isinstance(payload, list):
         return [job for job in payload if isinstance(job, dict)]
@@ -75,9 +90,7 @@ def _scheduler_jobs_matching(jobs: list[dict]) -> list[dict]:
     return [
         job
         for job in jobs
-        if str(job.get("url", "")).endswith(
-            "/zapgoals/api/v1/recurring/sweep-due"
-        )
+        if str(job.get("url", "")).endswith("/zapgoals/api/v1/recurring/sweep-due")
         or (
             "zapgoals" in str(job.get("name", "")).lower()
             and "zapgoalswasm" not in str(job.get("url", ""))
@@ -192,13 +205,21 @@ async def api_public_goal(
     description=(
         "Creates a 10-minute BOLT11 invoice for a public goal. Amount is in "
         "satoshis; the optional comment is limited to 280 characters. Expired "
-        "unpaid tracking rows are cleaned up before issuance."
+        "unpaid tracking rows are cleaned up before issuance. Invoice creation "
+        "is limited per client and goal per minute."
     ),
 )
-async def api_goal_invoice(goal_id: str, data: InvoiceRequest) -> InvoiceResponse:
+async def api_goal_invoice(
+    goal_id: str, request: Request, data: InvoiceRequest
+) -> InvoiceResponse:
     goal = await get_goal(goal_id)
     if not goal:
         raise _not_found()
+    if not _invoice_limiter.allow(_rate_limit_key(request, goal_id)):
+        raise HTTPException(
+            status_code=HTTPStatus.TOO_MANY_REQUESTS,
+            detail="Too many invoices requested for this goal; try again shortly",
+        )
     try:
         extra = {"comment": data.comment} if data.comment else None
         return await create_goal_invoice(goal, data.amount, "invoice", extra=extra)
@@ -233,7 +254,8 @@ async def api_lnurl(goal_id: str, request: Request) -> LnurlPayResponse:
     description=(
         "Creates a goal invoice from an LNURL-pay callback. The amount query "
         "parameter is in millisatoshis. A valid NIP-57 kind 9734 event may be "
-        "provided through the nostr parameter."
+        "provided through the nostr parameter. Invoice creation is limited "
+        "per client and goal per minute."
     ),
 )
 async def api_lnurl_callback(
@@ -282,6 +304,11 @@ async def api_lnurl_callback(
         extra.update({"nostr": nostr, "nostr_relays": relays})
         if lnurl:
             extra["lnurl"] = lnurl
+    if not _invoice_limiter.allow(_rate_limit_key(request, goal_id)):
+        return LnurlErrorResponse(
+            reason="Rate limit exceeded; please wait a minute before requesting "
+            "another invoice"
+        )
     try:
         invoice = await create_goal_invoice(
             goal,
@@ -294,6 +321,36 @@ async def api_lnurl_callback(
         return LnurlErrorResponse(reason="Unable to create invoice")
     payment_request = parse_obj_as(LightningInvoice, invoice.payment_request)
     return LnurlPayActionResponse(pr=payment_request, routes=[])
+
+
+@zapgoals_api_router.get(
+    "/qr",
+    response_class=Response,
+    summary="QR code for a Lightning invoice",
+    description=(
+        "Renders an SVG QR code used by the embeds for BOLT11 invoices. "
+        "Only payloads that start with LIGHTNING: are accepted, so the "
+        "endpoint cannot be used to generate arbitrary QR codes."
+    ),
+)
+def api_qr(
+    data: str = Query(..., description="QR payload; must start with LIGHTNING:")
+) -> Response:
+    payload = data.strip()
+    if not payload.upper().startswith("LIGHTNING:") or len(payload) > 2000:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="Only LIGHTNING: QR payloads are supported",
+        )
+    code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M)
+    code.add_data(payload)
+    code.make(fit=True)
+    image = code.make_image(image_factory=qrcode.image.svg.SvgPathImage)
+    return Response(
+        content=image.to_string(),
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=600"},
+    )
 
 
 @zapgoals_api_router.post(

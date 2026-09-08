@@ -30,6 +30,14 @@ def partially_funded_goal() -> Goal:
         lightning_address_username=None,
         created_at=now,
         updated_at=now,
+        recurring=False,
+        show_period_badge=True,
+        recurrence_unit=None,
+        recurrence_interval=1,
+        recurrence_day_of_month=None,
+        target_wallet_id=None,
+        rollover_mode="counts_as_progress",
+        sweep_mode="target_amount",
     )
 
 
@@ -52,6 +60,7 @@ def recurring_goal() -> Goal:
         created_at=now - timedelta(days=31),
         updated_at=now - timedelta(days=31),
         recurring=True,
+        show_period_badge=True,
         recurrence_unit="month",
         recurrence_interval=1,
         recurrence_day_of_month=None,
@@ -115,26 +124,26 @@ def test_sweep_goal_returns_period(monkeypatch):
     goal = recurring_goal()
     period = make_period()
     monkeypatch.setattr(views_api, "get_goal", AsyncMock(return_value=goal))
-    monkeypatch.setattr(
-        views_api, "sweep_recurring_goal", AsyncMock(return_value=period)
-    )
+    sweep = AsyncMock(return_value=period)
+    monkeypatch.setattr(views_api, "sweep_recurring_goal", sweep)
 
     result = asyncio.run(views_api.api_sweep_goal(goal.id, wallet_info(goal.wallet)))
 
     assert result == period
-    views_api.sweep_recurring_goal.assert_awaited_once_with(goal.id)
+    sweep.assert_awaited_once_with(goal.id)
 
 
 def test_sweep_goal_checks_ownership(monkeypatch):
     goal = recurring_goal()
     monkeypatch.setattr(views_api, "get_goal", AsyncMock(return_value=goal))
-    monkeypatch.setattr(views_api, "sweep_recurring_goal", AsyncMock())
+    sweep = AsyncMock()
+    monkeypatch.setattr(views_api, "sweep_recurring_goal", sweep)
 
     with pytest.raises(HTTPException) as exc:
         asyncio.run(views_api.api_sweep_goal(goal.id, wallet_info("other-wallet")))
 
     assert exc.value.status_code == 403
-    views_api.sweep_recurring_goal.assert_not_awaited()
+    sweep.assert_not_awaited()
 
 
 def test_sweep_goal_not_found(monkeypatch):
@@ -166,9 +175,8 @@ def test_sweep_goal_sweep_error_returns_conflict(monkeypatch):
 def test_sweep_due_sweeps_all_due_goals(monkeypatch):
     goal = recurring_goal()
     period = make_period()
-    monkeypatch.setattr(
-        views_api, "get_due_recurring_goals", AsyncMock(return_value=[goal])
-    )
+    get_due = AsyncMock(return_value=[goal])
+    monkeypatch.setattr(views_api, "get_due_recurring_goals", get_due)
     monkeypatch.setattr(
         views_api, "sweep_recurring_goal", AsyncMock(return_value=period)
     )
@@ -177,7 +185,7 @@ def test_sweep_due_sweeps_all_due_goals(monkeypatch):
 
     assert len(results) == 1
     assert results[0] == period
-    views_api.get_due_recurring_goals.assert_awaited_once_with(goal.wallet)
+    get_due.assert_awaited_once_with(goal.wallet)
 
 
 def test_sweep_due_continues_on_failure(monkeypatch):
@@ -185,37 +193,36 @@ def test_sweep_due_continues_on_failure(monkeypatch):
     monkeypatch.setattr(
         views_api, "get_due_recurring_goals", AsyncMock(return_value=[goal])
     )
-    monkeypatch.setattr(
-        views_api,
-        "sweep_recurring_goal",
-        AsyncMock(side_effect=SweepError("insufficient balance")),
-    )
+    sweep = AsyncMock(side_effect=SweepError("insufficient balance"))
+    monkeypatch.setattr(views_api, "sweep_recurring_goal", sweep)
 
     results = asyncio.run(views_api.api_sweep_due(wallet_info(goal.wallet)))
 
     assert results == []
-    views_api.sweep_recurring_goal.assert_awaited_once_with(goal.id)
+    sweep.assert_awaited_once_with(goal.id)
 
 
 def test_goal_periods_returns_ledger(monkeypatch):
     goal = recurring_goal()
     periods = [make_period(period_index=0), make_period(id="p1", period_index=1)]
     monkeypatch.setattr(views_api, "get_goal", AsyncMock(return_value=goal))
-    monkeypatch.setattr(views_api, "get_periods", AsyncMock(return_value=periods))
+    get_periods = AsyncMock(return_value=periods)
+    monkeypatch.setattr(views_api, "get_periods", get_periods)
 
     result = asyncio.run(views_api.api_goal_periods(goal.id, wallet_info(goal.wallet)))
 
     assert result == periods
-    views_api.get_periods.assert_awaited_once_with(goal.id)
+    get_periods.assert_awaited_once_with(goal.id)
 
 
 def test_goal_periods_checks_ownership(monkeypatch):
     goal = recurring_goal()
     monkeypatch.setattr(views_api, "get_goal", AsyncMock(return_value=goal))
-    monkeypatch.setattr(views_api, "get_periods", AsyncMock())
+    get_periods = AsyncMock()
+    monkeypatch.setattr(views_api, "get_periods", get_periods)
 
     with pytest.raises(HTTPException) as exc:
         asyncio.run(views_api.api_goal_periods(goal.id, wallet_info("other-wallet")))
 
     assert exc.value.status_code == 403
-    views_api.get_periods.assert_not_awaited()
+    get_periods.assert_not_awaited()

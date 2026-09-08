@@ -188,7 +188,7 @@ window.PageZapGoalsPublic = {
       if (this.walletPayAvailable) await this.createInvoice()
     },
     async ensureBitcoinConnect() {
-      return import('https://esm.sh/@getalby/bitcoin-connect@3.12.3')
+      return import('/zapgoals/static/js/vendor/bitcoin-connect.bundle.mjs')
     },
     isCurrentInvoice(paymentHash) {
       return (

@@ -170,6 +170,14 @@ def test_goal_data_accepts_long_time_periods():
         font_weight=400,
         nostr_pubkey=None,
         lightning_address_username=None,
+        recurring=False,
+        show_period_badge=True,
+        recurrence_unit=None,
+        recurrence_interval=1,
+        recurrence_day_of_month=None,
+        target_wallet_id=None,
+        rollover_mode="counts_as_progress",
+        sweep_mode="target_amount",
     )
     assert goal.target_date.tzinfo is not None
 
@@ -383,7 +391,8 @@ def test_sweep_recurring_goal_over_target_with_rollover(monkeypatch):
 
     monkeypatch.setattr(services, "get_goal", AsyncMock(return_value=goal))
     monkeypatch.setattr(services, "acquire_sweep_lock", AsyncMock(return_value=True))
-    monkeypatch.setattr(services, "release_sweep_lock", AsyncMock())
+    release = AsyncMock()
+    monkeypatch.setattr(services, "release_sweep_lock", release)
     monkeypatch.setattr(
         services, "complete_sweep", AsyncMock(return_value=updated_goal)
     )
@@ -402,7 +411,8 @@ def test_sweep_recurring_goal_over_target_with_rollover(monkeypatch):
     monkeypatch.setattr(
         services, "create_payment_request", AsyncMock(return_value=payment)
     )
-    monkeypatch.setattr(services, "pay_invoice", AsyncMock())
+    pay_invoice = AsyncMock()
+    monkeypatch.setattr(services, "pay_invoice", pay_invoice)
 
     period = asyncio.run(services.sweep_recurring_goal("recur123"))
 
@@ -412,13 +422,16 @@ def test_sweep_recurring_goal_over_target_with_rollover(monkeypatch):
     assert period.period_index == 0
     assert period.sweep_mode == "target_amount"
 
-    pay_call = services.pay_invoice.await_args
+    pay_call = pay_invoice.await_args
+    assert pay_call is not None
     assert pay_call.kwargs["wallet_id"] == "wallet123"
     assert "lnbc1sweep" in pay_call.kwargs["payment_request"]
 
     send.assert_awaited_once()
-    assert send.await_args.args[0] == "recur123"
-    services.release_sweep_lock.assert_not_awaited()
+    send_call = send.await_args
+    assert send_call is not None
+    assert send_call.args[0] == "recur123"
+    release.assert_not_awaited()
 
 
 def test_sweep_recurring_goal_insufficient_balance_releases_lock(monkeypatch):
@@ -427,7 +440,8 @@ def test_sweep_recurring_goal_insufficient_balance_releases_lock(monkeypatch):
     monkeypatch.setattr(services, "acquire_sweep_lock", AsyncMock(return_value=True))
     release = AsyncMock()
     monkeypatch.setattr(services, "release_sweep_lock", release)
-    monkeypatch.setattr(services, "complete_sweep", AsyncMock())
+    complete_sweep = AsyncMock()
+    monkeypatch.setattr(services, "complete_sweep", complete_sweep)
     monkeypatch.setattr(services.websocket_manager, "send", AsyncMock())
 
     target_wallet = SimpleNamespace(balance_msat=5000 * 1000)
@@ -440,19 +454,20 @@ def test_sweep_recurring_goal_insufficient_balance_releases_lock(monkeypatch):
         asyncio.run(services.sweep_recurring_goal("recur123"))
 
     release.assert_awaited_once_with("recur123")
-    services.complete_sweep.assert_not_awaited()
+    complete_sweep.assert_not_awaited()
 
 
 def test_sweep_recurring_goal_not_recurring_raises(monkeypatch):
     goal = make_recurring_goal(recurring=False)
     monkeypatch.setattr(services, "get_goal", AsyncMock(return_value=goal))
-    monkeypatch.setattr(services, "acquire_sweep_lock", AsyncMock())
+    acquire = AsyncMock()
+    monkeypatch.setattr(services, "acquire_sweep_lock", acquire)
     monkeypatch.setattr(services, "release_sweep_lock", AsyncMock())
 
     with pytest.raises(services.SweepError, match="not recurring"):
         asyncio.run(services.sweep_recurring_goal("recur123"))
 
-    services.acquire_sweep_lock.assert_not_awaited()
+    acquire.assert_not_awaited()
 
 
 def test_sweep_recurring_goal_not_due_raises(monkeypatch):
@@ -460,13 +475,14 @@ def test_sweep_recurring_goal_not_due_raises(monkeypatch):
         target_date=datetime.now(timezone.utc) + timedelta(days=30)
     )
     monkeypatch.setattr(services, "get_goal", AsyncMock(return_value=goal))
-    monkeypatch.setattr(services, "acquire_sweep_lock", AsyncMock())
+    acquire = AsyncMock()
+    monkeypatch.setattr(services, "acquire_sweep_lock", acquire)
     monkeypatch.setattr(services, "release_sweep_lock", AsyncMock())
 
     with pytest.raises(services.SweepError, match="not ended yet"):
         asyncio.run(services.sweep_recurring_goal("recur123"))
 
-    services.acquire_sweep_lock.assert_not_awaited()
+    acquire.assert_not_awaited()
 
 
 def test_sweep_recurring_goal_lock_not_acquired_raises(monkeypatch):
@@ -489,7 +505,8 @@ def test_sweep_recurring_goal_zero_zapped_skips_transfer(monkeypatch):
     )
     monkeypatch.setattr(services, "get_goal", AsyncMock(return_value=goal))
     monkeypatch.setattr(services, "acquire_sweep_lock", AsyncMock(return_value=True))
-    monkeypatch.setattr(services, "release_sweep_lock", AsyncMock())
+    release = AsyncMock()
+    monkeypatch.setattr(services, "release_sweep_lock", release)
     monkeypatch.setattr(
         services, "complete_sweep", AsyncMock(return_value=updated_goal)
     )
@@ -506,7 +523,7 @@ def test_sweep_recurring_goal_zero_zapped_skips_transfer(monkeypatch):
     assert period.rollover == 0
     create_pr.assert_not_awaited()
     pay_inv.assert_not_awaited()
-    services.release_sweep_lock.assert_not_awaited()
+    release.assert_not_awaited()
 
 
 def test_sweep_due_loop_sweeps_due_goals_then_sleeps(monkeypatch):

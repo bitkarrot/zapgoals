@@ -324,7 +324,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     // (Safari by default, Chrome with third-party cookie blocking).
     // If init() or launchPaymentModal() throws, fall back to QR-only.
     try {
-      import('https://esm.sh/@getalby/bitcoin-connect@3.12.3').then(function(bc){
+      import('/zapgoals/static/js/vendor/bitcoin-connect.bundle.mjs').then(function(bc){
         try {
           bc.init({appName:'ZapGoals', showBalance:false, persistConnection:true});
           bcPayment = bc.launchPaymentModal({
@@ -351,7 +351,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     var html = '<div class="zg-dialog-header">'
       + '<div class="zg-dialog-title">Pay Lightning invoice</div>'
       + '<button class="zg-close" onclick="window.__zgCloseDialog()">×</button></div>';
-    html += '<div class="zg-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=LIGHTNING:'+encodeURIComponent(invoice.payment_request.toUpperCase())+'" alt="QR code"></div>';
+    html += '<div class="zg-qr"><img src="/zapgoals/api/v1/qr?data='+encodeURIComponent('LIGHTNING:'+invoice.payment_request.toUpperCase())+'" alt="QR code"></div>';
     html += '<div class="zg-invoice-box"><textarea class="zg-invoice-text" readonly rows="3">'+escapeHtml(invoice.payment_request)+'</textarea></div>';
     html += '<div style="text-align:center;margin-top:.75rem"><button class="zg-copy-btn" data-copy="'+escapeHtml(invoice.payment_request)+'">📋 Copy invoice</button></div>';
     if(goal.wallet_mode === 'all'){
@@ -664,7 +664,7 @@ WIDGET_JS = """
       if(goal.wallet_mode==='all'){
         // Bitcoin Connect runs in first-party context here (host page),
         // so localStorage and popups work normally.
-        import('https://esm.sh/@getalby/bitcoin-connect@3.12.3').then(function(bc){
+        import(ORIGIN+'/zapgoals/static/js/vendor/bitcoin-connect.bundle.mjs').then(function(bc){
           bc.init({appName:'ZapGoals',showBalance:false,persistConnection:true});
           bcPayment = bc.launchPaymentModal({
             invoice: data.payment_request,
@@ -687,7 +687,7 @@ WIDGET_JS = """
 
   function showInvoiceDialog(){
     var html = '<div class="zg-dialog-header"><div class="zg-dialog-title">Pay Lightning invoice</div><button class="zg-close">\\u00d7</button></div>';
-    html += '<div class="zg-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=LIGHTNING:'+encodeURIComponent(invoice.payment_request.toUpperCase())+'" alt="QR code"></div>';
+    html += '<div class="zg-qr"><img src="'+ORIGIN+'/zapgoals/api/v1/qr?data='+encodeURIComponent('LIGHTNING:'+invoice.payment_request.toUpperCase())+'" alt="QR code"></div>';
     html += '<div class="zg-invoice-box"><textarea class="zg-invoice-text" readonly rows="3">'+escapeHtml(invoice.payment_request)+'</textarea></div>';
     html += '<div style="text-align:center;margin-top:.75rem"><button class="zg-copy-btn" data-copy="'+escapeHtml(invoice.payment_request)+'">\\ud83d\\udccb Copy invoice</button></div>';
 

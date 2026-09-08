@@ -27,6 +27,8 @@ In LNbits server settings, add `https://raw.githubusercontent.com/bitkarrot/zapg
 
 ZapGoals requires Python 3.10–3.12 and LNbits 1.5.0 or newer. LNURL-pay works without additional configuration. To let ZapGoals own `/.well-known/lnurlp` and issue Lightning Addresses, set `ZAPGOALS_ENABLE_LIGHTNING_ADDRESS=true`; leave it disabled when another extension such as LNURLp already owns that route.
 
+Anonymous invoice creation is limited to six invoices per minute per client and goal. Set `ZAPGOALS_INVOICE_RATE_LIMIT_PER_MINUTE` to change the limit or to `0` to disable it. If LNbits runs behind a reverse proxy that does not pass the real client IP to the server, all visitors share one bucket, so raise the limit accordingly.
+
 ## Use
 
 1. Open ZapGoals and create a goal.
@@ -36,7 +38,7 @@ ZapGoals requires Python 3.10–3.12 and LNbits 1.5.0 or newer. LNURL-pay works 
 
 The `vanilla` payment mode presents standard Lightning invoices, while `all` also enables Bitcoin Connect and its supported wallet connectors. Creators can configure one to four suggested zap amounts; contributors can select one or enter a custom amount and optional comment. Regardless of mode, only payments created for that goal count toward its progress.
 
-Bitcoin Connect is loaded in the browser through a dynamically pinned import. It is intentionally not an npm build dependency.
+Bitcoin Connect is loaded in the browser from a vendored bundle in `static/js/vendor`. It is intentionally not an npm build dependency, and no third-party CDN is contacted for scripts or QR codes.
 
 ## Lightning Address and Nostr setup
 

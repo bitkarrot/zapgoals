@@ -4,6 +4,7 @@
 - **Date:** 2026-09-08
 - **Scope:** all server code (`views.py`, `views_api.py`, `crud.py`, `models.py`, `services.py`, `tasks.py`, `migrations.py`, `settings.py`, `__init__.py`), the standalone embeds (`embed.py`), the SPA (`static/js/`), tests, configuration and packaging files.
 - **Method:** manual code review with local reproductions in `tests/test_security_review.py`. No LNbits server, wallet, payment backend, or external relay was contacted.
+- **Fixes shipped:** ZG-01 through ZG-04 are fixed on `main` and first released in v0.1.7.
 
 ## Finding summary
 
@@ -11,8 +12,8 @@
 | ----- | -------- | ---------------------------------------------------------- | --------------- |
 | ZG-01 | Medium   | SSRF via relay validation bypass                           | Fixed           |
 | ZG-02 | Low      | `escapeHtml` not attribute-safe; unescaped inline handlers | Fixed           |
-| ZG-03 | Low      | Unauthenticated invoice creation without rate limiting     | Open (advisory) |
-| ZG-04 | Low      | Invoice data sent to third-party QR service; CDN script    | Open (advisory) |
+| ZG-03 | Low      | Unauthenticated invoice creation without rate limiting     | Fixed           |
+| ZG-04 | Low      | Invoice data sent to third-party QR service; CDN script    | Fixed           |
 | ZG-05 | Info     | Scheduler proxy uses admin key for invoice-key callers     | Open (accepted) |
 | ZG-06 | Info     | Plaintext extension Nostr key; sweep crash window          | Open (accepted) |
 
@@ -74,24 +75,52 @@ flows into inline event handlers anymore.
 Pinned by `test_embed_escapehtml_escapes_quotes` and
 `test_embed_copy_buttons_avoid_inline_handlers`.
 
-### ZG-03 — Unauthenticated invoice creation without rate limiting (Low, open)
+### ZG-03 — Unauthenticated invoice creation without rate limiting (Low, fixed)
 
 `POST /api/v1/goals/{goal_id}/invoice` and `GET /api/v1/lnurl/cb/{goal_id}`
-intentionally allow anonymous use (LNURL protocol requirement) and have no
-per-IP or per-goal cap, so they can be spammed to load the Lightning backend
-and grow database rows. Unpaid contribution rows older than the 10-minute
-invoice expiry are purged before each issuance, which bounds that table.
-Recommend a per-goal/per-IP limit at this extension or a gateway-level
-limiter in front of LNbits.
+intentionally allow anonymous use (LNURL protocol requirement) and had no
+per-IP or per-goal cap, so they could be spammed to load the Lightning
+backend and grow database rows.
 
-### ZG-04 — Invoice data sent to third-party QR service; CDN script (Low, open)
+Fix applied: both endpoints now share a `WindowRateLimiter` keyed by client
+IP and goal id, defaulting to six invoices per minute per bucket
+(`ZAPGOALS_INVOICE_RATE_LIMIT_PER_MINUTE`; `0` disables it). The invoice
+endpoint answers HTTP 429 and the LNURL callback returns an LNURL error
+response, which is what wallets expect.
 
-The QR code is fetched from `https://api.qrserver.com` with the full BOLT11
-invoice as a query parameter — disclosing the memo (goal title) and amount to
-a third party. `bitcoin-connect` is imported live from `https://esm.sh`
-(version-pinned, which is good), but a CDN or package compromise would
-execute on the LNbits origin in the iframe page. Self-hosting QR generation
-and vendoring the dependency would remove both external dependencies.
+Limitations: the counter is in-memory and per process, so multiple workers
+or instances multiply the effective limit, and a reverse proxy that does not
+forward the real client IP makes all visitors share one bucket. Raise or
+disable the setting accordingly and keep gateway-level limits where stronger
+protection is required.
+
+Pinned by `test_window_rate_limiter_blocks_and_resets` and
+`test_invoice_endpoints_share_rate_limit`.
+
+### ZG-04 — Invoice data sent to third-party QR service; CDN script (Low, fixed)
+
+The QR code was fetched from `https://api.qrserver.com` with the full BOLT11
+invoice as a query parameter — disclosing the memo (goal title) and amount
+to a third party. `bitcoin-connect` was imported live from `https://esm.sh`,
+so a CDN or package compromise would have executed on the LNbits origin.
+
+Fix applied: QR codes are now rendered by a local endpoint,
+`GET /api/v1/qr?data=...`, which only accepts `LIGHTNING:` payloads of up
+to 2000 characters and returns self-contained SVG, so no invoice data leaves
+the host. Bitcoin Connect 3.12.3 is vendored into
+`static/js/vendor/bitcoin-connect.bundle.mjs` (the esm.sh bundle of the npm
+package, sha256
+`e81c96d021b0af6ddffc37595eebfac83d78672572258aab28917993a61827cc`, with its
+single polyfill import rewritten to a local `process.mjs` shim), and the
+iframe page, the widget and the SPA all import the local copy.
+
+Residual: Bitcoin Connect itself contacts its own runtime endpoints (the
+Alby exchange-rate API, connector links, and the LNC wasm download) when
+those connectors are used; that is the library's designed behavior and
+remains in effect.
+
+Pinned by `test_qr_endpoint_only_renders_lightning_payloads` and
+`test_frontends_contain_no_third_party_hosts`.
 
 ### ZG-05 — Scheduler proxy uses admin key for invoice-key callers (Info, accepted)
 
@@ -146,5 +175,6 @@ accounting reconciliation.
   not support cleanly; the layered checks make this impractical to exploit.
 - Relay validation is string-level at invoice time by design; the
   enforcement point for resolved addresses is publish time.
-- ZG-03 and ZG-04 remain open advisories; both are deployment-context
-  decisions rather than code defects.
+- ZG-03's limiter is per process and keyed by the client IP the server sees;
+  multi-worker deployments and proxies that hide real client IPs need
+  gateway-level limits or a raised setting.
