@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from lnbits.core.models import WalletTypeInfo
 
 from .. import views_api
-from ..models import Goal, Period, SweepError, WalletMode
+from ..models import Contribution, Goal, Period, SweepError, WalletMode
 
 
 def partially_funded_goal() -> Goal:
@@ -240,3 +240,49 @@ def test_goal_periods_checks_ownership(monkeypatch):
 
     assert exc.value.status_code == 403
     get_periods.assert_not_awaited()
+
+
+def test_invoice_status_reports_paid_flag(monkeypatch):
+    goal = partially_funded_goal()
+    now = datetime.now(timezone.utc)
+    contrib = Contribution(
+        payment_hash="ab" * 32,
+        goal_id=goal.id,
+        amount=2100,
+        paid=True,
+        source="invoice",
+        created_at=now,
+        paid_at=now,
+    )
+    monkeypatch.setattr(views_api, "get_goal", AsyncMock(return_value=goal))
+    monkeypatch.setattr(views_api, "get_contribution", AsyncMock(return_value=contrib))
+
+    status = asyncio.run(views_api.api_invoice_status(goal.id, "ab" * 32))
+
+    assert status.paid is True
+    assert status.amount == 2100
+    assert status.paid_at == now
+
+
+def test_invoice_status_rejects_wrong_goal_and_unknown_hash(monkeypatch):
+    goal = partially_funded_goal()
+    now = datetime.now(timezone.utc)
+    contrib = Contribution(
+        payment_hash="cd" * 32,
+        goal_id="other-goal",
+        amount=21,
+        paid=False,
+        source="invoice",
+        created_at=now,
+    )
+    monkeypatch.setattr(views_api, "get_goal", AsyncMock(return_value=goal))
+    monkeypatch.setattr(views_api, "get_contribution", AsyncMock(return_value=contrib))
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(views_api.api_invoice_status(goal.id, "cd" * 32))
+    assert exc.value.status_code == 404
+
+    monkeypatch.setattr(views_api, "get_contribution", AsyncMock(return_value=None))
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(views_api.api_invoice_status(goal.id, "ef" * 32))
+    assert exc.value.status_code == 404

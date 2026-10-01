@@ -16,6 +16,7 @@ from pydantic import parse_obj_as
 from .crud import (
     create_goal,
     delete_goal_and_contributions,
+    get_contribution,
     get_due_recurring_goals,
     get_goal,
     get_goal_by_username,
@@ -30,6 +31,7 @@ from .models import (
     GoalData,
     InvoiceRequest,
     InvoiceResponse,
+    InvoiceStatus,
     Period,
     PublicGoal,
     SchedulerSetupData,
@@ -226,6 +228,32 @@ async def api_goal_invoice(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, detail="Unable to create invoice"
         ) from exc
+
+
+@zapgoals_api_router.get(
+    "/goals/{goal_id}/invoice/{payment_hash}",
+    response_model=InvoiceStatus,
+    summary="Check invoice payment status",
+    description=(
+        "Public polling endpoint for invoice settlement. Returns the paid "
+        "flag and amount for a contribution created via POST /goals/{goal_id}/"
+        "invoice. Lets frontends close payment dialogs without LNbits keys "
+        "or websocket access."
+    ),
+)
+async def api_invoice_status(goal_id: str, payment_hash: str) -> InvoiceStatus:
+    goal = await get_goal(goal_id)
+    if not goal:
+        raise _not_found()
+    contribution = await get_contribution(payment_hash)
+    if not contribution or contribution.goal_id != goal_id:
+        raise _not_found()
+    return InvoiceStatus(
+        payment_hash=contribution.payment_hash,
+        paid=contribution.paid,
+        amount=contribution.amount,
+        paid_at=contribution.paid_at,
+    )
 
 
 @zapgoals_api_router.get(

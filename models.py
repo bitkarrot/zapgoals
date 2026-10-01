@@ -375,6 +375,13 @@ class InvoiceResponse(BaseModel):
     amount: int = Field(..., description="Invoice amount in satoshis.")
 
 
+class InvoiceStatus(BaseModel):
+    payment_hash: str
+    paid: bool
+    amount: int
+    paid_at: datetime | None = None
+
+
 class ExtensionSetting(BaseModel):
     id: str = "singleton"
     nostr_private_key: str
