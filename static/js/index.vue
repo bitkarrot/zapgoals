@@ -806,6 +806,28 @@
                   ></q-toggle>
                 </div>
               </div>
+              <div class="row q-col-gutter-md q-mt-md items-center">
+                <div class="col-12 col-sm-4">
+                  <q-input
+                    filled
+                    type="number"
+                    v-model.number="formDialog.data.progress_width"
+                    :label="$t('zapgoals.progress_width')"
+                    :min="100"
+                    :max="1200"
+                    suffix="px"
+                    clearable
+                    @clear="formDialog.data.progress_width = null"
+                    :hint="$t('zapgoals.progress_width_hint')"
+                  ></q-input>
+                </div>
+                <div class="col-12 col-sm-4">
+                  <q-toggle
+                    v-model="formDialog.data.button_full_width"
+                    :label="$t('zapgoals.button_full_width')"
+                  ></q-toggle>
+                </div>
+              </div>
               <div class="row q-col-gutter-md q-mt-md">
                 <div class="col-12 col-sm-8">
                   <q-select

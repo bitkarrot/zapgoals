@@ -123,13 +123,17 @@ window.PageZapGoals = {
     },
     previewTrackStyle() {
       const radius = this.formDialog.data.corner_radius
+      const width = this.formDialog.data.progress_width
       return {
         backgroundColor: this.formDialog.data.remainder_color || '#e5e7eb',
         height: `${Number(this.formDialog.data.progress_height) || 48}px`,
         borderRadius:
           radius === null || radius === undefined || radius === ''
             ? '999px'
-            : `${Number(radius)}px`
+            : `${Number(radius)}px`,
+        ...(width === null || width === undefined || width === ''
+          ? {}
+          : {width: `${Number(width)}px`, maxWidth: '100%', margin: '0 auto'})
       }
     }
   },
@@ -159,6 +163,8 @@ window.PageZapGoals = {
         transparent_background: false,
         corner_radius: null,
         progress_height: 48,
+        progress_width: null,
+        button_full_width: true,
         nostr_pubkey: null,
         lightning_address_username: null,
         current_amount: 0,
@@ -229,6 +235,12 @@ window.PageZapGoals = {
                   ? null
                   : Number(goal.corner_radius),
               progress_height: Number(goal.progress_height) || 48,
+              progress_width:
+                goal.progress_width === null ||
+                goal.progress_width === undefined
+                  ? null
+                  : Number(goal.progress_width),
+              button_full_width: goal.button_full_width !== false,
               recurring: goal.recurring || false,
               show_period_badge: goal.show_period_badge !== false,
               recurrence_unit: goal.recurrence_unit || 'month',
@@ -351,6 +363,13 @@ window.PageZapGoals = {
             ? null
             : Number(data.corner_radius),
         progress_height: Number(data.progress_height) || 48,
+        progress_width:
+          data.progress_width === null ||
+          data.progress_width === undefined ||
+          data.progress_width === ''
+            ? null
+            : Number(data.progress_width),
+        button_full_width: data.button_full_width !== false,
         nostr_pubkey: data.nostr_pubkey?.trim().toLowerCase() || null,
         lightning_address_username:
           data.lightning_address_username?.trim().toLowerCase() || null,

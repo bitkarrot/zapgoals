@@ -170,3 +170,14 @@ async def m006_title_template_and_style_knobs(db):
         ALTER TABLE zapgoals.goals
         ADD COLUMN progress_height INTEGER NOT NULL DEFAULT 48
         """)
+
+
+async def m007_progress_width_and_button_layout(db):
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN progress_width INTEGER
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN button_full_width BOOLEAN NOT NULL DEFAULT TRUE
+        """)

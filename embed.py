@@ -201,8 +201,10 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     if(goal.description_above)
       html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_above)+'</p>';
 
+    var barWidth = (goal.progress_width !== null && goal.progress_width !== undefined)
+      ? 'width:' + goal.progress_width + 'px;max-width:100%;margin:0 auto;' : '';
     html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')
-      + ';height:'+(goal.progress_height||48)+'px;'+radius+'">'
+      + ';height:'+(goal.progress_height||48)+'px;'+barWidth+radius+'">'
       + '<div class="zg-progress-fill" style="width:'+capped+'%;background:'+(goal.progress_color||'#f59e0b')+'"></div>'
       + '<span class="zg-percent" style="'+radius+'">'+pctLabel+'</span></div>';
 
@@ -222,7 +224,12 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     if(goal.description_below)
       html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_below)+'</p>';
 
-    html += '<button class="zg-zap-btn" style="background:'+btnColor+';color:'+btnText+';'+radius+'" onclick="window.__zgOpenAmount()">⚡ Zap this goal</button>';
+    var compact = goal.button_full_width === false;
+    var btnStyle = 'background:'+btnColor+';color:'+btnText+';'+radius
+      + (compact ? 'display:inline-block;width:auto;padding:8px 16px;' : '');
+    html += (compact ? '<div style="text-align:center">' : '')
+      + '<button class="zg-zap-btn" style="'+btnStyle+'" onclick="window.__zgOpenAmount()">⚡ Zap this goal</button>'
+      + (compact ? '</div>' : '');
 
     if(goal.lightning_address || goal.nostr_pubkey){
       html += '<div class="zg-separator"></div>';
@@ -582,12 +589,18 @@ WIDGET_JS = """
 
     var html = '<h1 class="zg-title" style="font-weight:'+fw+'">'+escapeHtml(goal.title)+'</h1>';
     if(goal.description_above) html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_above)+'</p>';
-    html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')+';height:'+(goal.progress_height||48)+'px;'+radius+'"><div class="zg-progress-fill" style="width:'+capped+'%;background:'+(goal.progress_color||'#f59e0b')+'"></div><span class="zg-percent" style="'+radius+'">'+pctLabel+'</span></div>';
+    var barWidth = (goal.progress_width!==null&&goal.progress_width!==undefined)?'width:'+goal.progress_width+'px;max-width:100%;margin:0 auto;':'';
+    html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')+';height:'+(goal.progress_height||48)+'px;'+barWidth+radius+'"><div class="zg-progress-fill" style="width:'+capped+'%;background:'+(goal.progress_color||'#f59e0b')+'"></div><span class="zg-percent" style="'+radius+'">'+pctLabel+'</span></div>';
     html += '<div class="zg-amounts" style="font-weight:'+fw+'"><span>Current '+formatSats(goal.current_amount)+'</span><span>Goal '+formatSats(goal.goal_amount)+'</span></div>';
     html += '<div class="zg-target" style="font-weight:'+fw+'">\\ud83d\\udcc5 <span>'+formatDate(goal.target_date)+'</span><div style="font-weight:700;margin-top:.25rem">'+escapeHtml(countdown)+'</div></div>';
     if(goal.recurring && goal.show_period_badge !== false) html += '<div class="zg-recurring"><span class="zg-recurring-badge">\\ud83d\\udd04 Period '+(goal.period_index+1)+'</span></div>';
     if(goal.description_below) html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_below)+'</p>';
-    html += '<button class="zg-zap-btn" style="background:'+btnColor+';color:'+btnText+';'+radius+'">\\u26a1 Zap this goal</button>';
+    var compact = goal.button_full_width===false;
+    var btnStyle = 'background:'+btnColor+';color:'+btnText+';'+radius
+      +(compact?'display:inline-block;width:auto;padding:8px 16px;':'');
+    html += (compact?'<div style="text-align:center">':'')
+      +'<button class="zg-zap-btn" style="'+btnStyle+'">\\u26a1 Zap this goal</button>'
+      +(compact?'</div>':'');
     if(goal.lightning_address||goal.nostr_pubkey) html += '<div class="zg-separator"></div>';
     if(goal.lightning_address) html += '<div class="zg-lnaddr" style="font-weight:'+fw+'">\\u2709 <span>'+escapeHtml(goal.lightning_address)+'</span><button class="zg-copy-btn" data-copy="'+escapeHtml(goal.lightning_address)+'">\\ud83d\\udccb</button></div>';
     if(goal.nostr_pubkey) html += '<div class="zg-nostr" style="font-weight:'+fw+'">\\u26a1 Nostr zaps are enabled for this goal.</div>';

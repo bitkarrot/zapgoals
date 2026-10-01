@@ -102,6 +102,18 @@ class GoalData(BaseModel):
         le=96,
         description="Progress bar height in pixels.",
     )
+    progress_width: int | None = Field(
+        None,
+        ge=100,
+        le=1200,
+        description="Progress bar width in pixels, centered. "
+        "None makes the bar span the full card width.",
+    )
+    button_full_width: bool = Field(
+        True,
+        description="When false, the zap button shrinks to fit its label "
+        "and centers with compact 8px/16px padding.",
+    )
     nostr_pubkey: str | None = Field(
         None, description="Recipient Nostr public key as 64 lowercase hex characters."
     )
@@ -291,6 +303,8 @@ class PublicGoal(BaseModel):
     transparent_background: bool = False
     corner_radius: int | None = None
     progress_height: int = 48
+    progress_width: int | None = None
+    button_full_width: bool = True
     wallet_mode: WalletMode
     status: str
     percent: float

@@ -173,6 +173,8 @@ def test_goal_data_accepts_long_time_periods():
         transparent_background=False,
         corner_radius=None,
         progress_height=48,
+        progress_width=None,
+        button_full_width=True,
         nostr_pubkey=None,
         lightning_address_username=None,
         recurring=False,

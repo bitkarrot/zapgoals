@@ -232,3 +232,18 @@ def test_title_template_plain_text():
 
     with pytest.raises(ValidationError):
         GoalData(**valid_goal_data(title_template="bad\x00template"))
+
+
+def test_progress_width_and_button_layout():
+    assert GoalData(**valid_goal_data()).progress_width is None
+    assert GoalData(**valid_goal_data()).button_full_width is True
+
+    goal = GoalData(**valid_goal_data(progress_width=300, button_full_width=False))
+    assert goal.progress_width == 300
+    assert goal.button_full_width is False
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(progress_width=50))
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(progress_width=5000))

@@ -212,6 +212,8 @@ def public_goal(goal: Goal, request: Request) -> PublicGoal:
         transparent_background=goal.transparent_background,
         corner_radius=goal.corner_radius,
         progress_height=goal.progress_height,
+        progress_width=goal.progress_width,
+        button_full_width=goal.button_full_width,
         wallet_mode=goal.wallet_mode,
         status=goal_status(goal),
         percent=percent,

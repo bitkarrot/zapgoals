@@ -75,6 +75,8 @@ def test_badge_migration_preserves_existing_goals_and_defaults_visible(
                 "transparent_background",
                 "corner_radius",
                 "progress_height",
+                "progress_width",
+                "button_full_width",
             }
             fields = legacy.dict(exclude=new_columns)
             async with db.connect() as conn:
@@ -89,6 +91,7 @@ def test_badge_migration_preserves_existing_goals_and_defaults_visible(
             before = dict(await db.fetchone("SELECT * FROM zapgoals.goals"))
             await migrations.m005_public_period_badge(db)
             await migrations.m006_title_template_and_style_knobs(db)
+            await migrations.m007_progress_width_and_button_layout(db)
             after = dict(await db.fetchone("SELECT * FROM zapgoals.goals"))
             assert after.pop("show_period_badge") == 1
             for column in (
@@ -97,6 +100,8 @@ def test_badge_migration_preserves_existing_goals_and_defaults_visible(
                 "transparent_background",
                 "corner_radius",
                 "progress_height",
+                "progress_width",
+                "button_full_width",
             ):
                 after.pop(column)
             assert after == before
@@ -132,6 +137,7 @@ def test_saved_visibility_roundtrips_through_owner_and_public_api(
             await migrate_old_schema(db)
             await migrations.m005_public_period_badge(db)
             await migrations.m006_title_template_and_style_knobs(db)
+            await migrations.m007_progress_width_and_button_layout(db)
             created = await views_api.api_create_goal(
                 goal_data(show_period_badge=visible), wallet
             )
