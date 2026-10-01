@@ -107,7 +107,9 @@ window.PageZapGoals = {
     previewStyle() {
       const data = this.formDialog.data
       return {
-        backgroundColor: data.background_color || '#ffffff',
+        backgroundColor: data.transparent_background
+          ? 'transparent'
+          : data.background_color || '#ffffff',
         color: data.text_color || '#1f2937',
         fontFamily: data.font_name || data.font_family || 'sans-serif',
         fontWeight: Number(data.font_weight) || 400
@@ -120,8 +122,14 @@ window.PageZapGoals = {
       }
     },
     previewTrackStyle() {
+      const radius = this.formDialog.data.corner_radius
       return {
-        backgroundColor: this.formDialog.data.remainder_color || '#e5e7eb'
+        backgroundColor: this.formDialog.data.remainder_color || '#e5e7eb',
+        height: `${Number(this.formDialog.data.progress_height) || 48}px`,
+        borderRadius:
+          radius === null || radius === undefined || radius === ''
+            ? '999px'
+            : `${Number(radius)}px`
       }
     }
   },
@@ -133,6 +141,7 @@ window.PageZapGoals = {
       return {
         wallet: this.g.user.wallets?.[0]?.id || null,
         title: '',
+        title_template: '',
         description_above: '',
         description_below: '',
         goal_amount: 10000,
@@ -146,6 +155,10 @@ window.PageZapGoals = {
         font_family: 'sans-serif',
         font_name: 'sans-serif',
         font_weight: 400,
+        button_color: '',
+        transparent_background: false,
+        corner_radius: null,
+        progress_height: 48,
         nostr_pubkey: null,
         lightning_address_username: null,
         current_amount: 0,
@@ -208,6 +221,14 @@ window.PageZapGoals = {
                 goal.wallet_mode === 'nwc' ? 'all' : goal.wallet_mode,
               font_name: goal.font_name || goal.font_family || 'sans-serif',
               font_weight: Number(goal.font_weight) || 400,
+              title_template: goal.title_template || '',
+              button_color: goal.button_color || '',
+              transparent_background: goal.transparent_background === true,
+              corner_radius:
+                goal.corner_radius === null || goal.corner_radius === undefined
+                  ? null
+                  : Number(goal.corner_radius),
+              progress_height: Number(goal.progress_height) || 48,
               recurring: goal.recurring || false,
               show_period_badge: goal.show_period_badge !== false,
               recurrence_unit: goal.recurrence_unit || 'month',
@@ -307,6 +328,7 @@ window.PageZapGoals = {
       const payload = {
         wallet: data.wallet,
         title: data.title.trim(),
+        title_template: (data.title_template || '').trim(),
         description_above: (data.description_above || '').trim(),
         description_below: (data.description_below || '').trim(),
         goal_amount: Number(data.goal_amount),
@@ -320,6 +342,15 @@ window.PageZapGoals = {
         font_family: data.font_family,
         font_name: data.font_name,
         font_weight: Number(data.font_weight),
+        button_color: data.button_color || '',
+        transparent_background: data.transparent_background === true,
+        corner_radius:
+          data.corner_radius === null ||
+          data.corner_radius === undefined ||
+          data.corner_radius === ''
+            ? null
+            : Number(data.corner_radius),
+        progress_height: Number(data.progress_height) || 48,
         nostr_pubkey: data.nostr_pubkey?.trim().toLowerCase() || null,
         lightning_address_username:
           data.lightning_address_username?.trim().toLowerCase() || null,

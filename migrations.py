@@ -147,3 +147,26 @@ async def m005_public_period_badge(db):
         ALTER TABLE zapgoals.goals
         ADD COLUMN show_period_badge BOOLEAN NOT NULL DEFAULT TRUE
         """)
+
+
+async def m006_title_template_and_style_knobs(db):
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN title_template TEXT NOT NULL DEFAULT ''
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN button_color TEXT NOT NULL DEFAULT ''
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN transparent_background BOOLEAN NOT NULL DEFAULT FALSE
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN corner_radius INTEGER
+        """)
+    await db.execute("""
+        ALTER TABLE zapgoals.goals
+        ADD COLUMN progress_height INTEGER NOT NULL DEFAULT 48
+        """)

@@ -59,6 +59,44 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+_ORDINAL_SUFFIXES = {1: "st", 2: "nd", 3: "rd"}
+
+
+def _ordinal(n: int) -> str:
+    if 10 <= n % 100 <= 20:
+        return f"{n}th"
+    return f"{n}{_ORDINAL_SUFFIXES.get(n % 10, 'th')}"
+
+
+def resolve_title(goal: Goal, now: datetime | None = None) -> str:
+    """Resolve the public title from goal.title_template.
+
+    Calendar placeholders are anchored to the moment of rendering, so a
+    recurring goal always labels the period currently collecting — a goal
+    sweeping at the stroke of a new month displays "September" all month
+    long regardless of timezone alignment of target_date:
+    {month} -> "September", {quarter} -> "3rd Quarter", {q} -> "Q3",
+    {year} -> "2026", {period} -> "Period 2", {date} -> "September 30, 2026".
+    Falls back to the static title when no template is set.
+    """
+    template = goal.title_template
+    if not template:
+        return goal.title
+    anchor = now or datetime.now(timezone.utc)
+    quarter = (anchor.month - 1) // 3 + 1
+    result = template
+    for token, value in (
+        ("{month}", anchor.strftime("%B")),
+        ("{quarter}", f"{_ordinal(quarter)} Quarter"),
+        ("{q}", f"Q{quarter}"),
+        ("{year}", str(anchor.year)),
+        ("{period}", f"Period {goal.period_index + 1}"),
+        ("{date}", f"{anchor.strftime('%B')} {anchor.day}, {anchor.year}"),
+    ):
+        result = result.replace(token, value)
+    return result
+
+
 def goal_status(goal: Goal) -> str:
     if goal.current_amount >= goal.goal_amount:
         return "completed"
@@ -145,7 +183,7 @@ def public_goal(goal: Goal, request: Request) -> PublicGoal:
     percent = round((goal.current_amount * 100) / goal.goal_amount, 2)
     return PublicGoal(
         id=goal.id,
-        title=goal.title,
+        title=resolve_title(goal),
         text={
             "above": goal.description_above,
             "below": goal.description_below,
@@ -170,6 +208,10 @@ def public_goal(goal: Goal, request: Request) -> PublicGoal:
         font_family=goal.font_family,
         font_name=goal.font_name,
         font_weight=goal.font_weight,
+        button_color=goal.button_color,
+        transparent_background=goal.transparent_background,
+        corner_radius=goal.corner_radius,
+        progress_height=goal.progress_height,
         wallet_mode=goal.wallet_mode,
         status=goal_status(goal),
         percent=percent,
@@ -187,7 +229,7 @@ def public_goal(goal: Goal, request: Request) -> PublicGoal:
 
 def lnurl_metadata(goal: Goal, identifier: str) -> str:
     return json.dumps(
-        [["text/plain", goal.title], ["text/identifier", identifier]],
+        [["text/plain", resolve_title(goal)], ["text/identifier", identifier]],
         separators=(",", ":"),
         ensure_ascii=False,
     )
@@ -375,7 +417,7 @@ def public_goal_dict(goal: Goal) -> dict:
     percent = round((goal.current_amount * 100) / goal.goal_amount, 2)
     return {
         "id": goal.id,
-        "title": goal.title,
+        "title": resolve_title(goal),
         "current_amount": goal.current_amount,
         "goal_amount": goal.goal_amount,
         "target_date": _as_utc(goal.target_date).isoformat(),

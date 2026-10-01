@@ -359,6 +359,14 @@
             </div>
             <q-input
               filled
+              v-model="formDialog.data.title_template"
+              :label="$t('zapgoals.title_template')"
+              maxlength="160"
+              counter
+              :hint="$t('zapgoals.title_template_hint')"
+            ></q-input>
+            <q-input
+              filled
               type="textarea"
               autogrow
               v-model="formDialog.data.description_above"
@@ -751,6 +759,51 @@
                     :label="$t('zapgoals.remainder_color')"
                     stack-label
                   ></q-input>
+                </div>
+              </div>
+              <div class="row q-col-gutter-md q-mt-md items-center">
+                <div class="col-6 col-sm-3">
+                  <q-input
+                    filled
+                    type="color"
+                    v-model="formDialog.data.button_color"
+                    :label="$t('zapgoals.button_color')"
+                    :hint="$t('zapgoals.button_color_hint')"
+                    stack-label
+                    clearable
+                    @clear="formDialog.data.button_color = ''"
+                  ></q-input>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <q-input
+                    filled
+                    type="number"
+                    v-model.number="formDialog.data.progress_height"
+                    :label="$t('zapgoals.progress_height')"
+                    :min="16"
+                    :max="96"
+                    suffix="px"
+                  ></q-input>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <q-input
+                    filled
+                    type="number"
+                    v-model.number="formDialog.data.corner_radius"
+                    :label="$t('zapgoals.corner_radius')"
+                    :min="0"
+                    :max="64"
+                    suffix="px"
+                    clearable
+                    @clear="formDialog.data.corner_radius = null"
+                    :hint="$t('zapgoals.corner_radius_hint')"
+                  ></q-input>
+                </div>
+                <div class="col-12 col-sm-3">
+                  <q-toggle
+                    v-model="formDialog.data.transparent_background"
+                    :label="$t('zapgoals.transparent_background')"
+                  ></q-toggle>
                 </div>
               </div>
               <div class="row q-col-gutter-md q-mt-md">

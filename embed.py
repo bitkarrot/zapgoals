@@ -72,14 +72,16 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
 .zg-amt-btn{padding:.75rem;border:1px solid #ddd;border-radius:.6rem;
   font-size:1rem;font-weight:600;cursor:pointer;background:#fff;color:#111;
   transition:background .15s}
-.zg-amt-btn.active{background:#f59e0b;color:#fff;border-color:#f59e0b}
-.zg-amt-btn:hover{border-color:#f59e0b}
+.zg-amt-btn.active{background:var(--zg-accent,#f59e0b);color:#fff;
+  border-color:var(--zg-accent,#f59e0b)}
+.zg-amt-btn:hover{border-color:var(--zg-accent,#f59e0b)}
 .zg-input{width:100%;padding:.6rem;border:1px solid #ddd;border-radius:.4rem;
   font-size:1rem;margin-bottom:.75rem}
 .zg-textarea{width:100%;padding:.6rem;border:1px solid #ddd;border-radius:.4rem;
   font-size:1rem;resize:vertical;margin-bottom:.75rem;min-height:60px}
 .zg-submit{display:block;width:100%;padding:.8rem;border:none;border-radius:.6rem;
-  font-size:1.05rem;font-weight:700;cursor:pointer;color:#fff;background:#f59e0b}
+  font-size:1.05rem;font-weight:700;cursor:pointer;color:#fff;
+  background:var(--zg-accent,#f59e0b)}
 .zg-qr{text-align:center;margin:1rem 0}
 .zg-qr img{max-width:280px;width:100%;height:auto}
 .zg-invoice-box{margin-top:.5rem}
@@ -155,7 +157,13 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     if(!goal) return;
     var fw = Number(goal.font_weight) || 400;
     var ff = goal.font_name || goal.font_family || 'sans-serif';
-    card.style.background = goal.background_color || '#fff';
+    var btnColor = goal.button_color || goal.progress_color || '#f59e0b';
+    var btnText = contrastColor(btnColor);
+    var radius = (goal.corner_radius !== null && goal.corner_radius !== undefined)
+      ? 'border-radius:' + goal.corner_radius + 'px;' : '';
+    document.body.style.setProperty('--zg-accent', btnColor);
+    card.style.background = goal.transparent_background
+      ? 'transparent' : (goal.background_color || '#fff');
     card.style.color = goal.text_color || '#1f2937';
     card.style.fontFamily = ff;
     card.style.fontWeight = fw;
@@ -193,9 +201,10 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     if(goal.description_above)
       html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_above)+'</p>';
 
-    html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')+'">'
+    html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')
+      + ';height:'+(goal.progress_height||48)+'px;'+radius+'">'
       + '<div class="zg-progress-fill" style="width:'+capped+'%;background:'+(goal.progress_color||'#f59e0b')+'"></div>'
-      + '<span class="zg-percent">'+pctLabel+'</span></div>';
+      + '<span class="zg-percent" style="'+radius+'">'+pctLabel+'</span></div>';
 
     html += '<div class="zg-amounts" style="font-weight:'+fw+'">'
       + '<span>Current '+formatSats(goal.current_amount)+'</span>'
@@ -213,9 +222,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     if(goal.description_below)
       html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_below)+'</p>';
 
-    var btnColor = goal.progress_color || '#f59e0b';
-    var btnText = contrastColor(btnColor);
-    html += '<button class="zg-zap-btn" style="background:'+btnColor+';color:'+btnText+'" onclick="window.__zgOpenAmount()">⚡ Zap this goal</button>';
+    html += '<button class="zg-zap-btn" style="background:'+btnColor+';color:'+btnText+';'+radius+'" onclick="window.__zgOpenAmount()">⚡ Zap this goal</button>';
 
     if(goal.lightning_address || goal.nostr_pubkey){
       html += '<div class="zg-separator"></div>';
@@ -257,7 +264,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     amount = null;
     comment = '';
     var suggested = (goal.suggested_amounts || [21,100,500,1000]).slice(0,4);
-    var btnColor = goal.progress_color || '#f59e0b';
+    var btnColor = goal.button_color || goal.progress_color || '#f59e0b';
     var btnText = contrastColor(btnColor);
 
     var html = '<div class="zg-dialog-header">'
@@ -357,7 +364,7 @@ body{font-family:sans-serif;background:transparent;overflow-x:hidden}
     if(goal.wallet_mode === 'all'){
       html += '<div style="text-align:center;margin-top:.5rem;font-size:.85rem;color:#666">'
         + 'Wallet payment unavailable in embed? '
-        + '<a href="'+ORIGIN+'/zapgoals/'+GOAL_ID+'" target="_blank" rel="noopener" style="color:#f59e0b">Open full page</a></div>';
+        + '<a href="'+ORIGIN+'/zapgoals/'+GOAL_ID+'" target="_blank" rel="noopener" style="color:var(--zg-accent,#f59e0b)">Open full page</a></div>';
     }
 
     dialog.innerHTML = html;
@@ -523,11 +530,11 @@ WIDGET_JS = """
 .zg-sats-label{font-size:1rem;color:#666;margin-top:.25rem}
 .zg-amounts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1rem}
 .zg-amt-btn{padding:.75rem;border:1px solid #ddd;border-radius:.6rem;font-size:1rem;font-weight:600;cursor:pointer;background:#fff;color:#111;transition:background .15s}
-.zg-amt-btn.active{background:#f59e0b;color:#fff;border-color:#f59e0b}
-.zg-amt-btn:hover{border-color:#f59e0b}
+.zg-amt-btn.active{background:var(--zg-accent,#f59e0b);color:#fff;border-color:var(--zg-accent,#f59e0b)}
+.zg-amt-btn:hover{border-color:var(--zg-accent,#f59e0b)}
 .zg-input{width:100%;padding:.6rem;border:1px solid #ddd;border-radius:.4rem;font-size:1rem;margin-bottom:.75rem}
 .zg-textarea{width:100%;padding:.6rem;border:1px solid #ddd;border-radius:.4rem;font-size:1rem;resize:vertical;margin-bottom:.75rem;min-height:60px}
-.zg-submit{display:block;width:100%;padding:.8rem;border:none;border-radius:.6rem;font-size:1.05rem;font-weight:700;cursor:pointer;color:#fff;background:#f59e0b}
+.zg-submit{display:block;width:100%;padding:.8rem;border:none;border-radius:.6rem;font-size:1.05rem;font-weight:700;cursor:pointer;color:#fff;background:var(--zg-accent,#f59e0b)}
 .zg-qr{text-align:center;margin:1rem 0}
 .zg-qr img{max-width:280px;width:100%;height:auto}
 .zg-invoice-box{margin-top:.5rem}
@@ -551,7 +558,11 @@ WIDGET_JS = """
     if(!goal) return;
     var fw = Number(goal.font_weight)||400;
     var ff = goal.font_name||goal.font_family||'sans-serif';
-    card.style.background = goal.background_color||'#fff';
+    var btnColor = goal.button_color||goal.progress_color||'#f59e0b';
+    var btnText = contrastColor(btnColor);
+    var radius = (goal.corner_radius!==null&&goal.corner_radius!==undefined)?'border-radius:'+goal.corner_radius+'px;':'';
+    container.style.setProperty('--zg-accent', btnColor);
+    card.style.background = goal.transparent_background?'transparent':(goal.background_color||'#fff');
     card.style.color = goal.text_color||'#1f2937';
     card.style.fontFamily = ff;
     card.style.fontWeight = fw;
@@ -569,17 +580,14 @@ WIDGET_JS = """
     else{var days=Math.floor(diff/86400000),hours=Math.floor((diff%86400000)/3600000),mins=Math.floor((diff%3600000)/60000),secs=Math.floor((diff%60000)/1000);
     if(days)countdown=days+'d '+hours+'h remaining';else if(hours)countdown=hours+'h '+mins+'m remaining';else countdown=mins+'m '+secs+'s remaining';}
 
-    var btnColor = goal.progress_color||'#f59e0b';
-    var btnText = contrastColor(btnColor);
-
     var html = '<h1 class="zg-title" style="font-weight:'+fw+'">'+escapeHtml(goal.title)+'</h1>';
     if(goal.description_above) html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_above)+'</p>';
-    html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')+'"><div class="zg-progress-fill" style="width:'+capped+'%;background:'+(goal.progress_color||'#f59e0b')+'"></div><span class="zg-percent">'+pctLabel+'</span></div>';
+    html += '<div class="zg-progress" style="background:'+(goal.remainder_color||'#e5e7eb')+';height:'+(goal.progress_height||48)+'px;'+radius+'"><div class="zg-progress-fill" style="width:'+capped+'%;background:'+(goal.progress_color||'#f59e0b')+'"></div><span class="zg-percent" style="'+radius+'">'+pctLabel+'</span></div>';
     html += '<div class="zg-amounts" style="font-weight:'+fw+'"><span>Current '+formatSats(goal.current_amount)+'</span><span>Goal '+formatSats(goal.goal_amount)+'</span></div>';
     html += '<div class="zg-target" style="font-weight:'+fw+'">\\ud83d\\udcc5 <span>'+formatDate(goal.target_date)+'</span><div style="font-weight:700;margin-top:.25rem">'+escapeHtml(countdown)+'</div></div>';
     if(goal.recurring && goal.show_period_badge !== false) html += '<div class="zg-recurring"><span class="zg-recurring-badge">\\ud83d\\udd04 Period '+(goal.period_index+1)+'</span></div>';
     if(goal.description_below) html += '<p class="zg-desc" style="font-weight:'+fw+'">'+escapeHtml(goal.description_below)+'</p>';
-    html += '<button class="zg-zap-btn" style="background:'+btnColor+';color:'+btnText+'">\\u26a1 Zap this goal</button>';
+    html += '<button class="zg-zap-btn" style="background:'+btnColor+';color:'+btnText+';'+radius+'">\\u26a1 Zap this goal</button>';
     if(goal.lightning_address||goal.nostr_pubkey) html += '<div class="zg-separator"></div>';
     if(goal.lightning_address) html += '<div class="zg-lnaddr" style="font-weight:'+fw+'">\\u2709 <span>'+escapeHtml(goal.lightning_address)+'</span><button class="zg-copy-btn" data-copy="'+escapeHtml(goal.lightning_address)+'">\\ud83d\\udccb</button></div>';
     if(goal.nostr_pubkey) html += '<div class="zg-nostr" style="font-weight:'+fw+'">\\u26a1 Nostr zaps are enabled for this goal.</div>';
@@ -603,7 +611,7 @@ WIDGET_JS = """
   function openAmountDialog(){
     amount = null; comment = '';
     var suggested = (goal.suggested_amounts||[21,100,500,1000]).slice(0,4);
-    var btnColor = goal.progress_color||'#f59e0b';
+    var btnColor = goal.button_color||goal.progress_color||'#f59e0b';
     var btnText = contrastColor(btnColor);
 
     var html = '<div class="zg-dialog-header"><div class="zg-dialog-title">Choose your zap</div><button class="zg-close">\\u00d7</button></div>';

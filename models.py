@@ -49,6 +49,13 @@ class WalletMode(str, Enum):
 
 class GoalData(BaseModel):
     title: str = Field(..., min_length=1, max_length=120)
+    title_template: str = Field(
+        "",
+        max_length=160,
+        description="Optional title template with placeholders resolved per "
+        "period: {month}, {quarter}, {q}, {year}, {period}, {date}. "
+        "When set, it takes precedence over title on public pages and embeds.",
+    )
     description_above: str = Field("", max_length=2000)
     description_below: str = Field("", max_length=2000)
     goal_amount: int = Field(
@@ -72,6 +79,29 @@ class GoalData(BaseModel):
     font_family: str = "sans-serif"
     font_name: str = Field("sans-serif", description="Validated CSS font-family stack.")
     font_weight: int = Field(400, description="Font weight from 400 to 800.")
+    button_color: str = Field(
+        "",
+        description="#RRGGBB color for the zap button and dialog accents. "
+        "Empty string inherits progress_color.",
+    )
+    transparent_background: bool = Field(
+        False,
+        description="Render the goal card with a transparent background "
+        "instead of background_color (for embedding on dark dashboards).",
+    )
+    corner_radius: int | None = Field(
+        None,
+        ge=0,
+        le=64,
+        description="Corner radius in pixels applied to the progress bar, "
+        "percent chip and zap button. None keeps the default pill styling.",
+    )
+    progress_height: int = Field(
+        48,
+        ge=16,
+        le=96,
+        description="Progress bar height in pixels.",
+    )
     nostr_pubkey: str | None = Field(
         None, description="Recipient Nostr public key as 64 lowercase hex characters."
     )
@@ -127,7 +157,7 @@ class GoalData(BaseModel):
         "entire_amount moves everything zapped this period.",
     )
 
-    @validator("title", "description_above", "description_below")
+    @validator("title", "title_template", "description_above", "description_below")
     def plain_text(cls, value):
         if "\x00" in value:
             raise ValueError("NUL characters are not allowed")
@@ -135,6 +165,14 @@ class GoalData(BaseModel):
 
     @validator("background_color", "text_color", "progress_color", "remainder_color")
     def valid_color(cls, value):
+        if not COLOR_RE.fullmatch(value):
+            raise ValueError("color must be in #RRGGBB format")
+        return value.upper()
+
+    @validator("button_color")
+    def valid_button_color(cls, value):
+        if not value:
+            return ""
         if not COLOR_RE.fullmatch(value):
             raise ValueError("color must be in #RRGGBB format")
         return value.upper()
@@ -249,6 +287,10 @@ class PublicGoal(BaseModel):
     font_family: str
     font_name: str
     font_weight: int
+    button_color: str = ""
+    transparent_background: bool = False
+    corner_radius: int | None = None
+    progress_height: int = 48
     wallet_mode: WalletMode
     status: str
     percent: float

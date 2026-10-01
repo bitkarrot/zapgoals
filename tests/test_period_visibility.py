@@ -5,9 +5,10 @@ from typing import cast
 
 import pytest
 from fastapi import FastAPI, HTTPException, Request, Response
-from lnbits import db as lnbits_db
 from lnbits.core.models import WalletTypeInfo
 from lnbits.settings import settings
+
+from lnbits import db as lnbits_db
 
 from .. import crud, migrations, views_api, zapgoals_ext
 from ..models import Goal, GoalData
@@ -67,10 +68,19 @@ def test_badge_migration_preserves_existing_goals_and_defaults_visible(
                 **goal_data().dict(),
             )
             # Insert exactly the pre-upgrade fields, before the new column exists.
-            fields = legacy.dict(exclude={"show_period_badge"})
+            new_columns = {
+                "show_period_badge",
+                "title_template",
+                "button_color",
+                "transparent_background",
+                "corner_radius",
+                "progress_height",
+            }
+            fields = legacy.dict(exclude=new_columns)
             async with db.connect() as conn:
                 values = lnbits_db.model_to_dict(legacy)
-                values.pop("show_period_badge")
+                for column in new_columns:
+                    values.pop(column)
                 await conn.execute(
                     f"INSERT INTO zapgoals.goals ({', '.join(fields)}) "
                     f"VALUES ({', '.join(':' + field for field in fields)})",
@@ -78,8 +88,17 @@ def test_badge_migration_preserves_existing_goals_and_defaults_visible(
                 )
             before = dict(await db.fetchone("SELECT * FROM zapgoals.goals"))
             await migrations.m005_public_period_badge(db)
+            await migrations.m006_title_template_and_style_knobs(db)
             after = dict(await db.fetchone("SELECT * FROM zapgoals.goals"))
             assert after.pop("show_period_badge") == 1
+            for column in (
+                "title_template",
+                "button_color",
+                "transparent_background",
+                "corner_radius",
+                "progress_height",
+            ):
+                after.pop(column)
             assert after == before
             loaded = await crud.get_goal(legacy.id)
             assert loaded is not None
@@ -112,6 +131,7 @@ def test_saved_visibility_roundtrips_through_owner_and_public_api(
         try:
             await migrate_old_schema(db)
             await migrations.m005_public_period_badge(db)
+            await migrations.m006_title_template_and_style_knobs(db)
             created = await views_api.api_create_goal(
                 goal_data(show_period_badge=visible), wallet
             )

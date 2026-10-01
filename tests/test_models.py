@@ -191,3 +191,44 @@ def test_recurrence_interval_bounds(interval):
 def test_recurrence_day_of_month_bounds(day):
     with pytest.raises(ValidationError):
         GoalData(**valid_recurring_data(recurrence_day_of_month=day))
+
+
+def test_button_color_validation():
+    goal = GoalData(**valid_goal_data(button_color="#dd18a9"))
+    assert goal.button_color == "#DD18A9"
+
+    assert GoalData(**valid_goal_data(button_color="")).button_color == ""
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(button_color="magenta"))
+
+
+def test_transparent_background_and_progress_height():
+    goal = GoalData(**valid_goal_data(transparent_background=True, progress_height=30))
+    assert goal.transparent_background is True
+    assert goal.progress_height == 30
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(progress_height=4))
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(progress_height=200))
+
+
+def test_corner_radius_optional_and_bounded():
+    assert GoalData(**valid_goal_data()).corner_radius is None
+    assert GoalData(**valid_goal_data(corner_radius=8)).corner_radius == 8
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(corner_radius=-1))
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(corner_radius=65))
+
+
+def test_title_template_plain_text():
+    goal = GoalData(**valid_goal_data(title_template="  {month} Zap Goals  "))
+    assert goal.title_template == "{month} Zap Goals"
+
+    with pytest.raises(ValidationError):
+        GoalData(**valid_goal_data(title_template="bad\x00template"))

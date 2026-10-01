@@ -161,6 +161,7 @@ def test_settled_payment_broadcasts_goal_invalidation(monkeypatch):
 def test_goal_data_accepts_long_time_periods():
     goal = GoalData(
         title="Long-term goal",
+        title_template="",
         description_above="",
         description_below="",
         goal_amount=100,
@@ -168,6 +169,10 @@ def test_goal_data_accepts_long_time_periods():
         wallet_mode=WalletMode.vanilla,
         font_name="sans-serif",
         font_weight=400,
+        button_color="",
+        transparent_background=False,
+        corner_radius=None,
+        progress_height=48,
         nostr_pubkey=None,
         lightning_address_username=None,
         recurring=False,
@@ -599,3 +604,62 @@ def test_sweep_due_loop_continues_on_sweep_error(monkeypatch):
 
     with pytest.raises(_asyncio.CancelledError):
         _asyncio.run(tasks.sweep_due_loop())
+
+
+def test_resolve_title_falls_back_to_static_title():
+    goal = make_goal(title="Static title", title_template="")
+    assert services.resolve_title(goal) == "Static title"
+
+
+def test_resolve_title_month_placeholder():
+    goal = make_goal(title="Static", title_template="{month} Zap Goals")
+    now = datetime(2026, 9, 15, tzinfo=timezone.utc)
+    assert services.resolve_title(goal, now) == "September Zap Goals"
+
+
+def test_resolve_title_quarter_placeholders():
+    goal = make_goal(title="Static", title_template="{quarter} Zap Goal ({q})")
+    now = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    assert services.resolve_title(goal, now) == "4th Quarter Zap Goal (Q4)"
+
+
+def test_resolve_title_quarter_ordinals():
+    goal = make_goal(title_template="{quarter}")
+    for month, quarter in [(1, "1st"), (4, "2nd"), (7, "3rd"), (11, "4th")]:
+        now = datetime(2026, month, 15, tzinfo=timezone.utc)
+        assert services.resolve_title(goal, now) == f"{quarter} Quarter"
+
+
+def test_resolve_title_year_period_date_placeholders():
+    goal = make_goal(
+        title_template="{period} of {year} ends {date}",
+        period_index=1,
+    )
+    now = datetime(2026, 9, 30, tzinfo=timezone.utc)
+    assert (
+        services.resolve_title(goal, now) == "Period 2 of 2026 ends September 30, 2026"
+    )
+
+
+def test_resolve_title_unknown_placeholders_left_intact():
+    goal = make_goal(title_template="{weekday} {month}")
+    now = datetime(2026, 9, 30, tzinfo=timezone.utc)
+    assert services.resolve_title(goal, now) == "{weekday} September"
+
+
+def test_resolve_title_labels_current_collection_period():
+    # A monthly goal whose period boundary lands at Nov 1 06:59 UTC
+    # (Oct 31 local) displays "October" throughout October.
+    goal = make_goal(
+        title_template="{month} Zap Goal",
+        target_date=datetime(2026, 11, 1, 6, 59, tzinfo=timezone.utc),
+    )
+    now = datetime(2026, 10, 20, tzinfo=timezone.utc)
+    assert services.resolve_title(goal, now) == "October Zap Goal"
+
+
+def test_public_goal_dict_uses_resolved_title():
+    goal = make_goal(title="Static", title_template="{month} Zap Goal")
+    payload = services.public_goal_dict(goal)
+    expected = f"{datetime.now(timezone.utc).strftime('%B')} Zap Goal"
+    assert payload["title"] == expected
