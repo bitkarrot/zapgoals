@@ -1,7 +1,9 @@
 [project]
 name = "lnbits-zapgoals"
 version = "0.1.11"
-requires-python = ">=3.10,<3.13"
+# >=3.11 so the dev env can resolve pillow>=13 (security fixes); the extension
+# code itself remains 3.10-compatible and LNbits does not pip-resolve it.
+requires-python = ">=3.11,<3.13"
 description = "LNbits extension for shareable Lightning funding goals."
 authors = [{ name = "bitkarrot" }]
 urls = { Homepage = "https://github.com/bitkarrot/zapgoals", Repository = "https://github.com/bitkarrot/zapgoals" }
@@ -23,15 +25,23 @@ package-mode = false
 [tool.uv]
 # Security/compat pins for the dev environment only (lnbits==1.6.x pins these
 # lower). pyjwt>=2.15.1 fixes PYSEC-2026-4141/4183 and earlier JWT advisories.
+# pillow>=13.0.0 fixes ~20 Pillow advisories (lnbits pins pillow~=12.3.0).
 # starlette>=0.49.1 fixes PYSEC-2026-1942 (CVE-2025-62727); the remaining
 # starlette advisories need >=1.0.1, which requires fastapi>=0.128 -> pydantic
-# v2, incompatible with lnbits 1.6.x (pydantic~=1.10). fastapi<0.128 keeps
-# pydantic-v1 support. bitstring<5 restores bolt11 compat (ConstBitStream).
+# v2, incompatible with lnbits 1.6.x (pydantic~=1.10); starlette 1.x also drops
+# the Router on_startup/on_shutdown kwargs fastapi<0.128 uses. fastapi<0.128
+# keeps pydantic-v1 support. bitstring<5 restores bolt11 compat
+# (ConstBitStream). virtualenv>=21.14.7 fixes its activate-script injection
+# advisory; it needs packaging>=26.3, so packaging is overridden off lnbits'
+# ~=25.0.0 pin too.
 override-dependencies = [
     "bitstring<5",
     "fastapi>=0.122.0,<0.128.0",
+    "packaging>=26.3",
+    "pillow>=13.0.0",
     "pyjwt>=2.15.1",
     "starlette>=0.49.1,<0.51.0",
+    "virtualenv>=21.14.7",
 ]
 
 [tool.mypy]
@@ -66,6 +76,9 @@ venv = ".venv"
 
 [tool.ruff]
 line-length = 88
+# Code must stay 3.10-compatible (lnbits supports >=3.10); requires-python is
+# only raised for the dev-env security overrides.
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "I", "A", "C", "N", "UP", "RUF", "B"]
