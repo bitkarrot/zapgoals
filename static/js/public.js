@@ -1,3 +1,9 @@
+// lnbits <1.6 ignores routes.json "i18n" (no loadExtI18n); load the locale
+// bundle ourselves so $t('zapgoals.*') labels resolve (en.js self-merges).
+if (typeof window.LNbits?.utils?.loadExtI18n !== 'function') {
+  LNbits.utils.loadScript('/zapgoals/static/js/i18n/en.js')
+}
+
 window.PageZapGoalsPublic = {
   template: '#page-zapgoals-public',
   data() {
