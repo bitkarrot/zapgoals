@@ -1,6 +1,6 @@
 [project]
 name = "lnbits-zapgoals"
-version = "0.1.11"
+version = "0.1.12"
 # >=3.11 so the dev env can resolve pillow>=13 (security fixes); the extension
 # code itself remains 3.10-compatible and LNbits does not pip-resolve it.
 requires-python = ">=3.11,<3.13"
