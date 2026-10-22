@@ -5,9 +5,10 @@ from typing import cast
 
 import pytest
 from fastapi import FastAPI, HTTPException, Request, Response
-from lnbits import db as lnbits_db
 from lnbits.core.models import WalletTypeInfo
 from lnbits.settings import settings
+
+from lnbits import db as lnbits_db
 
 from .. import crud, migrations, views_api, zapgoals_ext
 from ..models import Goal, GoalData
