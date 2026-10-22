@@ -147,11 +147,17 @@ window.PageZapGoals = {
     titlePlaceholders() {
       return {
         month: '{month}',
+        day: '{day}',
+        date: '{date}',
+        week: '{week}',
+        w: '{w}',
         quarter: '{quarter}',
         q: '{q}',
+        half_year: '{half_year}',
+        h: '{h}',
         year: '{year}',
-        period: '{period}',
-        date: '{date}'
+        annual: '{annual}',
+        period: '{period}'
       }
     }
   },

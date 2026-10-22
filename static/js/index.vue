@@ -364,7 +364,19 @@
               maxlength="160"
               counter
               :hint="$t('zapgoals.title_template_hint', titlePlaceholders)"
-            ></q-input>
+            >
+              <template v-slot:append>
+                <q-icon name="info" class="cursor-help">
+                  <q-tooltip
+                    class="text-body2"
+                    max-width="320px"
+                    v-text="
+                      $t('zapgoals.title_template_tags', titlePlaceholders)
+                    "
+                  ></q-tooltip>
+                </q-icon>
+              </template>
+            </q-input>
             <q-input
               filled
               type="textarea"

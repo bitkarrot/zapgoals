@@ -2,15 +2,15 @@
   {
     "path": "/zapgoals/",
     "name": "PageZapGoals",
-    "template": "/zapgoals/static/js/index.vue?rev=0.1.12",
-    "component": "/zapgoals/static/js/index.js?rev=0.1.12",
+    "template": "/zapgoals/static/js/index.vue?rev=0.1.13",
+    "component": "/zapgoals/static/js/index.js?rev=0.1.13",
     "i18n": "/zapgoals/static/js/i18n"
   },
   {
     "path": "/zapgoals/:id",
     "name": "PageZapGoalsPublic",
-    "template": "/zapgoals/static/js/public.vue?rev=0.1.12",
-    "component": "/zapgoals/static/js/public.js?rev=0.1.12",
+    "template": "/zapgoals/static/js/public.vue?rev=0.1.13",
+    "component": "/zapgoals/static/js/public.js?rev=0.1.13",
     "i18n": "/zapgoals/static/js/i18n"
   }
 ]

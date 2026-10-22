@@ -75,8 +75,11 @@ def resolve_title(goal: Goal, now: datetime | None = None) -> str:
     recurring goal always labels the period currently collecting — a goal
     sweeping at the stroke of a new month displays "September" all month
     long regardless of timezone alignment of target_date:
-    {month} -> "September", {quarter} -> "3rd Quarter", {q} -> "Q3",
-    {year} -> "2026", {period} -> "Period 2", {date} -> "September 30, 2026".
+    {month} -> "September", {day} -> "30", {date} -> "September 30, 2026",
+    {week} -> "Week 40", {w} -> "W40", {quarter} -> "3rd Quarter",
+    {q} -> "Q3", {half_year} -> "2nd Half", {h} -> "H2",
+    {year} -> "2026", {annual} -> "2026" (alias of {year}),
+    {period} -> "Period 2".
     Falls back to the static title when no template is set.
     """
     template = goal.title_template
@@ -84,14 +87,22 @@ def resolve_title(goal: Goal, now: datetime | None = None) -> str:
         return goal.title
     anchor = now or datetime.now(timezone.utc)
     quarter = (anchor.month - 1) // 3 + 1
+    half = 1 if anchor.month <= 6 else 2
+    week = anchor.isocalendar().week
     result = template
     for token, value in (
         ("{month}", anchor.strftime("%B")),
+        ("{day}", str(anchor.day)),
+        ("{date}", f"{anchor.strftime('%B')} {anchor.day}, {anchor.year}"),
+        ("{week}", f"Week {week}"),
+        ("{w}", f"W{week}"),
         ("{quarter}", f"{_ordinal(quarter)} Quarter"),
         ("{q}", f"Q{quarter}"),
+        ("{half_year}", f"{_ordinal(half)} Half"),
+        ("{h}", f"H{half}"),
         ("{year}", str(anchor.year)),
+        ("{annual}", str(anchor.year)),
         ("{period}", f"Period {goal.period_index + 1}"),
-        ("{date}", f"{anchor.strftime('%B')} {anchor.day}, {anchor.year}"),
     ):
         result = result.replace(token, value)
     return result

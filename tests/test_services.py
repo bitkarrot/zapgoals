@@ -643,6 +643,28 @@ def test_resolve_title_year_period_date_placeholders():
     )
 
 
+def test_resolve_title_day_week_placeholders():
+    goal = make_goal(title_template="{month} {day} ({week} / {w})")
+    now = datetime(2026, 10, 22, tzinfo=timezone.utc)
+    assert services.resolve_title(goal, now) == "October 22 (Week 43 / W43)"
+
+
+def test_resolve_title_half_year_placeholders():
+    goal = make_goal(title_template="{half_year} ({h})")
+    assert services.resolve_title(
+        goal, datetime(2026, 3, 15, tzinfo=timezone.utc)
+    ) == "1st Half (H1)"
+    assert services.resolve_title(
+        goal, datetime(2026, 10, 1, tzinfo=timezone.utc)
+    ) == "2nd Half (H2)"
+
+
+def test_resolve_title_annual_alias():
+    goal = make_goal(title_template="{annual} {year}")
+    now = datetime(2026, 9, 30, tzinfo=timezone.utc)
+    assert services.resolve_title(goal, now) == "2026 2026"
+
+
 def test_resolve_title_unknown_placeholders_left_intact():
     goal = make_goal(title_template="{weekday} {month}")
     now = datetime(2026, 9, 30, tzinfo=timezone.utc)

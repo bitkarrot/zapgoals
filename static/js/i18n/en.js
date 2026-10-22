@@ -37,7 +37,9 @@ window.i18n.global.mergeLocaleMessage('en', {
     remainder_color: 'Remainder',
     title_template: 'Title template (optional)',
     title_template_hint:
-      'Overrides the title on public pages. Placeholders: {month}, {quarter}, {q}, {year}, {period}, {date} — e.g. "{month} Zap Goals".',
+      'Overrides the title on public pages — e.g. "{month} Zap Goals". Hover the info icon for all supported tags.',
+    title_template_tags:
+      'Tags resolve per period end: {month} month name · {day} day of month · {date} full date · {week} / {w} ISO week · {quarter} / {q} quarter · {half_year} / {h} half-year · {year} / {annual} year · {period} period number',
     button_color: 'Button',
     button_color_hint: 'Clear to inherit the progress color.',
     progress_height: 'Bar height',

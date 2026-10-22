@@ -53,7 +53,8 @@ class GoalData(BaseModel):
         "",
         max_length=160,
         description="Optional title template with placeholders resolved per "
-        "period: {month}, {quarter}, {q}, {year}, {period}, {date}. "
+        "period: {month}, {day}, {date}, {week}, {w}, {quarter}, {q}, "
+        "{half_year}, {h}, {year}, {annual}, {period}. "
         "When set, it takes precedence over title on public pages and embeds.",
     )
     description_above: str = Field("", max_length=2000)
