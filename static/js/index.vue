@@ -363,7 +363,7 @@
               :label="$t('zapgoals.title_template')"
               maxlength="160"
               counter
-              :hint="$t('zapgoals.title_template_hint')"
+              :hint="$t('zapgoals.title_template_hint', titlePlaceholders)"
             ></q-input>
             <q-input
               filled

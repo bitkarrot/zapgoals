@@ -141,6 +141,18 @@ window.PageZapGoals = {
           ? {}
           : {width: `${Number(width)}px`, maxWidth: '100%', margin: '0 auto'})
       }
+    },
+    // vue-i18n eats bare {token} as named slots; passing them as values
+    // renders them literally in the hint text.
+    titlePlaceholders() {
+      return {
+        month: '{month}',
+        quarter: '{quarter}',
+        q: '{q}',
+        year: '{year}',
+        period: '{period}',
+        date: '{date}'
+      }
     }
   },
   created() {
