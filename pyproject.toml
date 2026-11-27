@@ -7,7 +7,7 @@ requires-python = ">=3.11,<3.13"
 description = "LNbits extension for shareable Lightning funding goals."
 authors = [{ name = "bitkarrot" }]
 urls = { Homepage = "https://github.com/bitkarrot/zapgoals", Repository = "https://github.com/bitkarrot/zapgoals" }
-dependencies = ["lnbits~=1.6.0"]
+dependencies = ["lnbits~=1.7.1"]
 
 [dependency-groups]
 dev = [
@@ -23,25 +23,27 @@ dev = [
 package-mode = false
 
 [tool.uv]
-# Security/compat pins for the dev environment only (lnbits==1.6.x pins these
-# lower). pyjwt>=2.15.1 fixes PYSEC-2026-4141/4183 and earlier JWT advisories.
+# Security/compat pins for the dev environment only — LNbits does not install
+# extension dependencies, so production uses whatever the host LNbits install
+# provides. lnbits 1.7.x pins these lower than their CVE-fixed versions:
+# pyjwt>=2.15.1 fixes PYSEC-2026-4141/4183 and earlier JWT advisories.
 # pillow>=13.0.0 fixes ~20 Pillow advisories (lnbits pins pillow~=12.3.0).
-# starlette>=0.49.1 fixes PYSEC-2026-1942 (CVE-2025-62727); the remaining
-# starlette advisories need >=1.0.1, which requires fastapi>=0.128 -> pydantic
-# v2, incompatible with lnbits 1.6.x (pydantic~=1.10); starlette 1.x also drops
-# the Router on_startup/on_shutdown kwargs fastapi<0.128 uses. fastapi<0.128
-# keeps pydantic-v1 support. bitstring<5 restores bolt11 compat
-# (ConstBitStream). virtualenv>=21.14.7 fixes its activate-script injection
-# advisory; it needs packaging>=26.3, so packaging is overridden off lnbits'
-# ~=25.0.0 pin too.
+# starlette>=1.3.1 fixes the remaining starlette advisories (lnbits pins
+# starlette~=0.48.0); it needs fastapi>=0.165, hence the fastapi override off
+# lnbits' ~=0.116.1 pin. pydantic-settings>=2.14.2 fixes its secrets-dir
+# symlink advisory (lnbits pins ~=2.12.0). bitstring<5 restores bolt11 compat
+# (ConstBitStream). virtualenv>=21.14.13 fixes its activation-script
+# advisories; it needs packaging>=26.3, so packaging is overridden off
+# lnbits' ~=25.0.0 pin too.
 override-dependencies = [
     "bitstring<5",
-    "fastapi>=0.122.0,<0.128.0",
+    "fastapi>=0.165.0",
     "packaging>=26.3",
     "pillow>=13.0.0",
+    "pydantic-settings>=2.14.2",
     "pyjwt>=2.15.1",
-    "starlette>=0.49.1,<0.51.0",
-    "virtualenv>=21.14.7",
+    "starlette>=1.3.1",
+    "virtualenv>=21.14.13",
 ]
 
 [tool.mypy]

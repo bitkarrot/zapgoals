@@ -5,6 +5,7 @@ import secrets
 import socket
 from calendar import monthrange
 from datetime import datetime, timedelta, timezone
+from typing import cast
 from urllib.parse import ParseResult, urlparse
 
 import websockets
@@ -21,7 +22,6 @@ from lnurl import (
     MilliSatoshi,
 )
 from loguru import logger
-from pydantic import parse_obj_as
 from pynostr.event import Event
 from pynostr.key import PrivateKey
 
@@ -273,7 +273,9 @@ async def make_lnurl_response(
     if goal.nostr_pubkey:
         _, signing_pubkey = await get_nostr_keypair()
     return LnurlPayResponse(
-        callback=parse_obj_as(CallbackUrl, callback),
+        # cast only satisfies the type checkers; LnurlPayResponse validates
+        # the string on construction in both pydantic v1 and v2.
+        callback=cast(CallbackUrl, callback),
         minSendable=MilliSatoshi(MIN_SENDABLE_MSAT),
         maxSendable=MilliSatoshi(MAX_SENDABLE_MSAT),
         metadata=LnurlPayMetadata(lnurl_metadata(goal, identifier)),
@@ -308,7 +310,7 @@ async def create_goal_invoice(
             unhashed_description.hex() if unhashed_description is not None else None
         ),
     )
-    if "extension" in CreateInvoice.__fields__:
+    if _has_model_field(CreateInvoice, "extension"):
         invoice_data.extension = "zapgoals"
     payment = await create_payment_request(goal.wallet, invoice_data)
     await create_contribution(payment.payment_hash, goal.id, amount, source)
@@ -317,6 +319,16 @@ async def create_goal_invoice(
         payment_request=payment.payment_request or payment.bolt11,
         amount=amount,
     )
+
+
+def _has_model_field(model: type, name: str) -> bool:
+    """True if a pydantic model has a field, across pydantic v1 and v2.
+
+    pydantic v2 exposes model_fields and only keeps __fields__ as a deprecated
+    shim, while pydantic v1 (lnbits 1.6.x hosts) only has __fields__.
+    """
+    fields = getattr(model, "model_fields", None) or getattr(model, "__fields__", {})
+    return name in fields
 
 
 def _is_shorthand_ip(hostname: str) -> bool:
@@ -579,7 +591,7 @@ async def sweep_recurring_goal(goal_id: str) -> Period:
                 expiry=3600,
                 extra=sweep_extra,
             )
-            if "extension" in CreateInvoice.__fields__:
+            if _has_model_field(CreateInvoice, "extension"):
                 invoice_data.extension = "zapgoals"
             payment = await create_payment_request(goal.target_wallet_id, invoice_data)
             await pay_invoice(
