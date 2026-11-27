@@ -94,7 +94,7 @@ function setup() {
   // Replace only the ESM network import boundary; all payment logic is unchanged.
   vm.runInNewContext(
     source.replace(
-      /import\(\s*'https:\/\/esm.sh\/@getalby\/bitcoin-connect@3\.12\.3'\s*\)/,
+      /import\(\s*'\/zapgoals\/static\/js\/vendor\/bitcoin-connect\.bundle\.mjs'\s*\)/,
       'Promise.resolve(window.__bitcoinConnect)'
     ),
     context
