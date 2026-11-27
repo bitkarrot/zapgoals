@@ -651,12 +651,14 @@ def test_resolve_title_day_week_placeholders():
 
 def test_resolve_title_half_year_placeholders():
     goal = make_goal(title_template="{half_year} ({h})")
-    assert services.resolve_title(
-        goal, datetime(2026, 3, 15, tzinfo=timezone.utc)
-    ) == "1st Half (H1)"
-    assert services.resolve_title(
-        goal, datetime(2026, 10, 1, tzinfo=timezone.utc)
-    ) == "2nd Half (H2)"
+    assert (
+        services.resolve_title(goal, datetime(2026, 3, 15, tzinfo=timezone.utc))
+        == "1st Half (H1)"
+    )
+    assert (
+        services.resolve_title(goal, datetime(2026, 10, 1, tzinfo=timezone.utc))
+        == "2nd Half (H2)"
+    )
 
 
 def test_resolve_title_annual_alias():
